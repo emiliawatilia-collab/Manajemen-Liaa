@@ -1,24 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Camera, Upload, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Camera, CheckCircle } from 'lucide-react';
+import { useUnits } from '../hooks/useUnits';
 
 const Booking = () => {
-  const [units, setUnits] = useState([]);
-  
-  useEffect(() => {
-    const loadUnits = () => {
-      const savedUnits = localStorage.getItem('apartmentUnits');
-      if (savedUnits) {
-        setUnits(JSON.parse(savedUnits));
-      }
-    };
-    
-    loadUnits();
-    
-    // Listen for storage changes
-    window.addEventListener('storage', loadUnits);
-    return () => window.removeEventListener('storage', loadUnits);
-  }, []);
-
+  const { units, bookUnit } = useUnits();
   const emptyUnits = units.filter(u => u.status === 'kosong');
   const [formData, setFormData] = useState({
     unitId: '',
@@ -44,65 +29,47 @@ const Booking = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Get selected unit
-    const selectedUnit = emptyUnits.find(u => u.id === parseInt(formData.unitId));
+    const selectedUnit = emptyUnits.find(u => (u.firebaseId || u.id).toString() === formData.unitId);
     if (!selectedUnit) return;
     
-    // Update unit with booking data
-    const savedUnits = localStorage.getItem('apartmentUnits');
-    if (savedUnits) {
-      const allUnits = JSON.parse(savedUnits);
-      const updatedUnits = allUnits.map(unit => {
-        if (unit.id === selectedUnit.id) {
-          return {
-            ...unit,
-            status: 'terisi',
-            tenant: {
-              name: formData.tenantName,
-              phone: formData.phone,
-              checkIn: formData.checkIn,
-              checkInTime: formData.checkInTime,
-              checkOut: formData.checkOut,
-              checkOutTime: formData.checkOutTime,
-              ktpImage: formData.ktpImage,
-              price: parseInt(formData.price), // Save custom price per booking
-            }
-          };
-        }
-        return unit;
-      });
-      
-      // Save to localStorage
-      localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-      
-      // Trigger custom event for same-tab updates
-      window.dispatchEvent(new Event('unitsUpdated'));
-    }
+    const tenantData = {
+      name: formData.tenantName,
+      phone: formData.phone,
+      checkIn: formData.checkIn,
+      checkInTime: formData.checkInTime,
+      checkOut: formData.checkOut,
+      checkOutTime: formData.checkOutTime,
+      ktpImage: formData.ktpImage,
+      price: parseInt(formData.price),
+    };
     
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      // Reset form
-      setFormData({
-        unitId: '',
-        tenantName: '',
-        phone: '',
-        checkIn: new Date().toISOString().split('T')[0],
-        checkInTime: '',
-        checkOut: '',
-        checkOutTime: '',
-        price: '',
-        ktpImage: null,
-      });
-      // Reload units
-      const reloadUnits = localStorage.getItem('apartmentUnits');
-      if (reloadUnits) {
-        setUnits(JSON.parse(reloadUnits));
-      }
-    }, 2000);
+    try {
+      await bookUnit(selectedUnit.firebaseId || selectedUnit.id, tenantData);
+      
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        // Reset form
+        setFormData({
+          unitId: '',
+          tenantName: '',
+          phone: '',
+          checkIn: new Date().toISOString().split('T')[0],
+          checkInTime: '',
+          checkOut: '',
+          checkOutTime: '',
+          price: '',
+          ktpImage: null,
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Error booking unit:', error);
+      alert('Gagal menyimpan booking');
+    }
   };
 
   return (
@@ -131,7 +98,7 @@ const Booking = () => {
             >
               <option value="">-- Pilih Unit Kosong --</option>
               {emptyUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
+                <option key={unit.firebaseId || unit.id} value={unit.firebaseId || unit.id}>
                   Unit {unit.unitNumber}
                 </option>
               ))}

@@ -1,90 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar, User, MapPin, Phone } from 'lucide-react';
+import { useUnits } from '../hooks/useUnits';
 
 const History = () => {
-  const [units, setUnits] = useState([]);
+  const { units, checkoutUnit, extendBooking } = useUnits();
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [newCheckOut, setNewCheckOut] = useState('');
+  const [newCheckOutTime, setNewCheckOutTime] = useState('');
   
-  useEffect(() => {
-    const loadUnits = () => {
-      const savedUnits = localStorage.getItem('apartmentUnits');
-      if (savedUnits) {
-        setUnits(JSON.parse(savedUnits));
-      }
-    };
-    
-    loadUnits();
-    
-    // Listen for storage changes
-    const handleStorageChange = () => loadUnits();
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('unitsUpdated', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('unitsUpdated', handleStorageChange);
-    };
-  }, []);
-
   const bookings = units.filter(u => u.status === 'terisi');
 
   // Extend booking function
   const handleExtend = (unit) => {
     setSelectedUnit(unit);
     setNewCheckOut(unit.tenant?.checkOut || '');
+    setNewCheckOutTime(unit.tenant?.checkOutTime || '');
     setShowExtendModal(true);
   };
 
   // Save extended checkout date
-  const handleSaveExtend = (e) => {
+  const handleSaveExtend = async (e) => {
     e.preventDefault();
     
     if (!selectedUnit) return;
     
-    const updatedUnits = units.map(unit => {
-      if (unit.id === selectedUnit.id) {
-        return {
-          ...unit,
-          tenant: {
-            ...unit.tenant,
-            checkOut: newCheckOut,
-          }
-        };
-      }
-      return unit;
-    });
-    
-    localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-    setUnits(updatedUnits);
-    window.dispatchEvent(new Event('unitsUpdated'));
-    
-    setShowExtendModal(false);
-    setSelectedUnit(null);
-    setNewCheckOut('');
+    try {
+      await extendBooking(selectedUnit.firebaseId || selectedUnit.id, newCheckOut, newCheckOutTime);
+      
+      setShowExtendModal(false);
+      setSelectedUnit(null);
+      setNewCheckOut('');
+      setNewCheckOutTime('');
+    } catch (error) {
+      console.error('Error extending booking:', error);
+      alert('Gagal memperpanjang booking');
+    }
   };
 
   // Checkout function
-  const handleCheckout = (unitId) => {
+  const handleCheckout = async (firebaseId) => {
     if (!confirm('Yakin ingin checkout unit ini?')) return;
     
-    const updatedUnits = units.map(unit => {
-      if (unit.id === unitId) {
-        return {
-          ...unit,
-          status: 'kosong',
-          tenant: null,
-        };
-      }
-      return unit;
-    });
-    
-    localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-    setUnits(updatedUnits);
-    
-    // Trigger custom event
-    window.dispatchEvent(new Event('unitsUpdated'));
+    try {
+      await checkoutUnit(firebaseId);
+    } catch (error) {
+      console.error('Error checkout:', error);
+      alert('Gagal checkout unit');
+    }
   };
 
   return (
@@ -212,7 +175,7 @@ const History = () => {
                       Perpanjang
                     </button>
                     <button 
-                      onClick={() => handleCheckout(unit.id)}
+                      onClick={() => handleCheckout(unit.firebaseId || unit.id)}
                       className="py-2.5 bg-primary-600 text-white rounded-xl font-medium text-sm hover:bg-primary-700 transition-colors"
                     >
                       Check-out

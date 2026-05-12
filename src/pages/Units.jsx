@@ -1,37 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Filter, Plus } from 'lucide-react';
 import UnitCard from '../components/UnitCard';
+import { useUnits } from '../hooks/useUnits';
 
 const Units = () => {
+  const { units, loading, createUnit, checkoutUnit, removeUnit } = useUnits();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, terisi, kosong
-  const [units, setUnits] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUnitNumber, setNewUnitNumber] = useState('');
   
-  useEffect(() => {
-    const loadUnits = () => {
-      const savedUnits = localStorage.getItem('apartmentUnits');
-      if (savedUnits) {
-        setUnits(JSON.parse(savedUnits));
-      }
-    };
-    
-    loadUnits();
-    
-    // Listen for storage changes
-    const handleStorageChange = () => loadUnits();
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('unitsUpdated', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('unitsUpdated', handleStorageChange);
-    };
-  }, []);
-
   // Add new unit
-  const handleAddUnit = (e) => {
+  const handleAddUnit = async (e) => {
     e.preventDefault();
     
     const newUnit = {
@@ -43,43 +23,31 @@ const Units = () => {
       pricePerMonth: 0,
     };
     
-    const updatedUnits = [...units, newUnit].sort((a, b) => 
-      (a.unitNumber || '').localeCompare(b.unitNumber || '', undefined, { numeric: true })
-    );
-    
-    localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-    setUnits(updatedUnits);
-    window.dispatchEvent(new Event('unitsUpdated'));
-    
-    setShowAddModal(false);
-    setNewUnitNumber('');
+    try {
+      await createUnit(newUnit);
+      setShowAddModal(false);
+      setNewUnitNumber('');
+    } catch (error) {
+      console.error('Error adding unit:', error);
+      alert('Gagal menambah unit');
+    }
   };
 
   // Checkout function
-  const handleCheckout = (unitId) => {
+  const handleCheckout = async (firebaseId) => {
     if (!confirm('Yakin ingin checkout unit ini?')) return;
     
-    const updatedUnits = units.map(unit => {
-      if (unit.id === unitId) {
-        return {
-          ...unit,
-          status: 'kosong',
-          tenant: null,
-        };
-      }
-      return unit;
-    });
-    
-    localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-    setUnits(updatedUnits);
-    
-    // Trigger custom event
-    window.dispatchEvent(new Event('unitsUpdated'));
+    try {
+      await checkoutUnit(firebaseId);
+    } catch (error) {
+      console.error('Error checkout:', error);
+      alert('Gagal checkout unit');
+    }
   };
 
   // Delete unit function
-  const handleDeleteUnit = (unitId) => {
-    const unit = units.find(u => u.id === unitId);
+  const handleDeleteUnit = async (firebaseId) => {
+    const unit = units.find(u => u.firebaseId === firebaseId);
     
     // Check if unit is occupied
     if (unit && unit.status === 'terisi') {
@@ -89,13 +57,12 @@ const Units = () => {
     
     if (!confirm(`Yakin ingin menghapus Unit ${unit?.unitNumber}?`)) return;
     
-    const updatedUnits = units.filter(u => u.id !== unitId);
-    
-    localStorage.setItem('apartmentUnits', JSON.stringify(updatedUnits));
-    setUnits(updatedUnits);
-    
-    // Trigger custom event
-    window.dispatchEvent(new Event('unitsUpdated'));
+    try {
+      await removeUnit(firebaseId);
+    } catch (error) {
+      console.error('Error deleting unit:', error);
+      alert('Gagal menghapus unit');
+    }
   };
 
   // Filter units based on search and status

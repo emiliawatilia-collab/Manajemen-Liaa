@@ -5,7 +5,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
   const isOccupied = unit.status === 'terisi';
 
   return (
-    <Link to={`/units/${unit.id}`}>
+    <Link to={`/units/${unit.firebaseId || unit.id}`}>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
         {/* Header */}
         <div className={`px-4 py-3 ${isOccupied ? 'bg-red-50' : 'bg-green-50'}`}>
@@ -103,7 +103,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                   <button 
                     onClick={(e) => {
                       e.preventDefault();
-                      onCheckout(unit.id);
+                      onCheckout(unit.firebaseId || unit.id);
                     }}
                     className="py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium text-sm transition-colors"
                   >
@@ -141,7 +141,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
-                    onDelete(unit.id);
+                    onDelete(unit.firebaseId || unit.id);
                   }}
                   className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium text-sm transition-colors"
                 >

@@ -1,45 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUnits } from '../hooks/useUnits';
 
 const Calendar = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [units, setUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load units from localStorage
-  const loadUnits = () => {
-    try {
-      const savedUnits = localStorage.getItem('apartmentUnits');
-      if (savedUnits) {
-        const parsedUnits = JSON.parse(savedUnits);
-        setUnits(parsedUnits);
-      } else {
-        setUnits([]);
-      }
-    } catch (error) {
-      console.error('Error loading units:', error);
-      setUnits([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadUnits();
-    
-    const handleUpdate = () => loadUnits();
-    window.addEventListener('storage', handleUpdate);
-    window.addEventListener('unitsUpdated', handleUpdate);
-    const interval = setInterval(loadUnits, 2000);
-    
-    return () => {
-      window.removeEventListener('storage', handleUpdate);
-      window.removeEventListener('unitsUpdated', handleUpdate);
-      clearInterval(interval);
-    };
-  }, []);
+  const { units, loading } = useUnits();
 
   // Get month info
   const year = currentDate.getFullYear();

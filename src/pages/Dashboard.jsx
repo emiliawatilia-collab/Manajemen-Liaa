@@ -1,33 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Building2, Home, TrendingUp, DollarSign } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import UnitCard from '../components/UnitCard';
+import { useUnits } from '../hooks/useUnits';
 
 const Dashboard = () => {
-  const [units, setUnits] = useState([]);
+  const { units, loading } = useUnits();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
-
-  useEffect(() => {
-    const loadUnits = () => {
-      const savedUnits = localStorage.getItem('apartmentUnits');
-      if (savedUnits) {
-        setUnits(JSON.parse(savedUnits));
-      }
-    };
-    
-    loadUnits();
-    
-    // Listen for storage changes
-    const handleStorageChange = () => loadUnits();
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('unitsUpdated', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('unitsUpdated', handleStorageChange);
-    };
-  }, []);
 
   const occupiedUnits = units.filter(u => u.status === 'terisi');
   const emptyUnits = units.filter(u => u.status === 'kosong');
