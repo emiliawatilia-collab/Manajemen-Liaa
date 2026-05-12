@@ -3,23 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './App.css'
 import App from './App.jsx'
-import { unitsData } from './services/unitData'
-import { migrateLocalStorageToFirebase } from './services/migrateData'
-
-// Initialize localStorage with default data if empty
-if (!localStorage.getItem('apartmentUnits')) {
-  localStorage.setItem('apartmentUnits', JSON.stringify(unitsData));
-}
-
-// Migrate data from localStorage to Firebase (one-time)
-const migrated = localStorage.getItem('firebaseMigrated');
-if (!migrated) {
-  migrateLocalStorageToFirebase().then((success) => {
-    if (success) {
-      localStorage.setItem('firebaseMigrated', 'true');
-    }
-  });
-}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
