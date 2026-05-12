@@ -13,9 +13,6 @@ export const useUnits = () => {
     const unsubscribe = subscribeToUnits((data) => {
       setUnits(data);
       setLoading(false);
-    }, (err) => {
-      setError(err);
-      setLoading(false);
     });
 
     // Cleanup subscription on unmount
