@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'apartemen-v1';
+const CACHE_NAME = 'apartemen-v2'; // Update version untuk force refresh
 const urlsToCache = [
   '/',
   '/index.html',
@@ -39,37 +39,32 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network first, fallback to cache (untuk update lebih cepat)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
+        // Check if valid response
+        if (!response || response.status !== 200) {
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || response;
+          });
         }
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
+        // Clone the response
+        const responseToCache = response.clone();
 
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
 
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        }).catch(() => {
-          // Return offline page if available
-          return caches.match('/index.html');
+        return response;
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request).then((cachedResponse) => {
+          return cachedResponse || caches.match('/index.html');
         });
       })
   );
