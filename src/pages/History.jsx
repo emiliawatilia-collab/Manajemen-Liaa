@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Calendar, User, MapPin, Phone } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendarAlt, faUser, faMapMarkerAlt, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
 
 const History = () => {
@@ -91,7 +92,7 @@ const History = () => {
                 <div className="bg-gradient-to-r from-primary-50 to-primary-100 px-4 py-3 border-b border-primary-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-primary-600" />
+                      <FontAwesomeIcon icon={faMapMarkerAlt} className="text-lg text-primary-600" />
                       <span className="font-bold text-lg text-gray-900">
                         Unit {unit.unitNumber}
                       </span>
@@ -106,7 +107,7 @@ const History = () => {
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User size={20} className="text-primary-600" />
+                      <FontAwesomeIcon icon={faUser} className="text-xl text-primary-600" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-500">Penyewa</p>
@@ -117,7 +118,7 @@ const History = () => {
                   {unit.tenant.phone && (
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Phone size={20} className="text-blue-600" />
+                        <FontAwesomeIcon icon={faPhone} className="text-xl text-blue-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm text-gray-500">Telepon</p>
@@ -128,7 +129,7 @@ const History = () => {
 
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Calendar size={20} className="text-purple-600" />
+                      <FontAwesomeIcon icon={faCalendarAlt} className="text-xl text-purple-600" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-500">Periode</p>
@@ -187,7 +188,7 @@ const History = () => {
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-            <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
+            <FontAwesomeIcon icon={faCalendarAlt} className="text-5xl text-gray-300 mb-3" />
             <p className="text-gray-500">Belum ada histori booking</p>
             <p className="text-sm text-gray-400 mt-1">Booking akan muncul di sini</p>
           </div>

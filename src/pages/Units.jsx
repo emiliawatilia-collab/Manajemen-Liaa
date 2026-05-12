@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch, faFilter, faPlus } from '@fortawesome/free-solid-svg-icons';
 import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
 
@@ -84,13 +85,13 @@ const Units = () => {
               onClick={() => setShowAddModal(true)}
               className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
             >
-              <Plus size={24} />
+              <FontAwesomeIcon icon={faPlus} className="text-2xl" />
             </button>
           </div>
           
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Cari unit atau nama penyewa..."
@@ -155,7 +156,7 @@ const Units = () => {
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100 mt-8">
-            <Filter size={48} className="mx-auto text-gray-300 mb-3" />
+            <FontAwesomeIcon icon={faFilter} className="text-5xl text-gray-300 mb-3" />
             <p className="text-gray-500">Tidak ada unit ditemukan</p>
             <p className="text-sm text-gray-400 mt-1">Coba ubah filter atau kata kunci pencarian</p>
           </div>

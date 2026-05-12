@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft, faChevronRight, faCalendarAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { useUnits } from '../hooks/useUnits';
 
@@ -97,14 +98,14 @@ const Calendar = () => {
           
           <div className="flex items-center justify-between">
             <button onClick={goToPreviousMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <ChevronLeft size={24} />
+              <FontAwesomeIcon icon={faChevronLeft} className="text-2xl" />
             </button>
             <div className="flex items-center gap-2">
-              <CalendarIcon size={20} />
+              <FontAwesomeIcon icon={faCalendarAlt} className="text-xl" />
               <span className="text-lg font-semibold">{monthName}</span>
             </div>
             <button onClick={goToNextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <ChevronRight size={24} />
+              <FontAwesomeIcon icon={faChevronRight} className="text-2xl" />
             </button>
           </div>
         </div>
@@ -140,14 +141,14 @@ const Calendar = () => {
           </div>
         ) : units.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-            <CalendarIcon size={48} className="mx-auto mb-3 text-gray-300" />
+            <FontAwesomeIcon icon={faCalendarAlt} className="text-5xl text-gray-300 mb-3" />
             <p className="text-gray-500 mb-2">Belum ada unit</p>
             <p className="text-sm text-gray-400 mb-4">Tambah unit untuk mulai menggunakan kalender</p>
             <button
               onClick={() => navigate('/units')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
             >
-              <Plus size={20} />
+              <FontAwesomeIcon icon={faPlus} />
               Tambah Unit
             </button>
           </div>

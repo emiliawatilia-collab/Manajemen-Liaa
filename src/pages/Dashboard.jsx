@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Building2, Home, TrendingUp, DollarSign } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBuilding, faHome, faChartLine, faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import StatCard from '../components/StatCard';
 import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
@@ -44,13 +45,13 @@ const Dashboard = () => {
       <div className="px-4 -mt-4 mb-6">
         <div className="grid grid-cols-2 gap-3 mb-3">
           <StatCard
-            icon={Building2}
+            icon={faBuilding}
             label="Total Unit"
             value={units.length}
             color="blue"
           />
           <StatCard
-            icon={Home}
+            icon={faHome}
             label="Unit Terisi"
             value={occupiedUnits.length}
             color="red"
@@ -58,13 +59,13 @@ const Dashboard = () => {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            icon={TrendingUp}
+            icon={faChartLine}
             label="Occupancy"
             value={`${occupancyRate}%`}
             color="green"
           />
           <StatCard
-            icon={DollarSign}
+            icon={faDollarSign}
             label="Revenue/Hari"
             value={`Rp ${(totalRevenue / 1000).toFixed(0)}K`}
             color="purple"
@@ -106,7 +107,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-            <Building2 size={48} className="mx-auto text-gray-300 mb-3" />
+            <FontAwesomeIcon icon={faBuilding} className="text-5xl text-gray-300 mb-3" />
             <p className="text-gray-500">Belum ada unit terisi</p>
           </div>
         )}

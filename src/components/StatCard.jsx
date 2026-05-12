@@ -1,4 +1,6 @@
-const StatCard = ({ icon: Icon, label, value, color = 'blue', trend }) => {
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+const StatCard = ({ icon, label, value, color = 'blue', trend }) => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -18,7 +20,7 @@ const StatCard = ({ icon: Icon, label, value, color = 'blue', trend }) => {
           )}
         </div>
         <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
-          <Icon size={24} />
+          <FontAwesomeIcon icon={icon} className="text-2xl" />
         </div>
       </div>
     </div>

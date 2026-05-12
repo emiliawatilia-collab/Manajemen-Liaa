@@ -1,5 +1,6 @@
-import { MapPin, User, Calendar, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMapMarkerAlt, faUser, faCalendarAlt, faPhone } from '@fortawesome/free-solid-svg-icons';
 
 const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
   const isOccupied = unit.status === 'terisi';
@@ -11,7 +12,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
         <div className={`px-4 py-3 ${isOccupied ? 'bg-red-50' : 'bg-green-50'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MapPin size={18} className={isOccupied ? 'text-red-600' : 'text-green-600'} />
+              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-lg" style={{ color: isOccupied ? '#dc2626' : '#16a34a' }} />
               <span className="font-bold text-lg text-gray-900">Unit {unit.unitNumber}</span>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -29,12 +30,12 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
           {isOccupied && unit.tenant ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-gray-700">
-                <User size={16} className="text-gray-400" />
+                <FontAwesomeIcon icon={faUser} className="text-gray-400" />
                 <span className="font-medium">{unit.tenant.name || 'Tamu'}</span>
               </div>
               
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar size={16} className="text-gray-400" />
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400" />
                 <span>
                   {new Date(unit.tenant.checkIn).toLocaleDateString('id-ID', { 
                     day: 'numeric', 
@@ -53,7 +54,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
 
               {unit.tenant.phone && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Phone size={16} className="text-gray-400" />
+                  <FontAwesomeIcon icon={faPhone} className="text-gray-400" />
                   <span>{unit.tenant.phone}</span>
                 </div>
               )}

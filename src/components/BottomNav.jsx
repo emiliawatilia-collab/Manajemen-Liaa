@@ -1,14 +1,15 @@
-import { Home, Building2, Calendar, PlusCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome, faBuilding, faCalendarDays, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 
 const BottomNav = () => {
   const location = useLocation();
   
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/units', icon: Building2, label: 'Units' },
-    { path: '/calendar', icon: Calendar, label: 'Kalender' },
-    { path: '/booking', icon: PlusCircle, label: 'Booking' },
+    { path: '/', icon: faHome, label: 'Home' },
+    { path: '/units', icon: faBuilding, label: 'Units' },
+    { path: '/calendar', icon: faCalendarDays, label: 'Kalender' },
+    { path: '/booking', icon: faCirclePlus, label: 'Booking' },
   ];
 
   return (
@@ -16,7 +17,6 @@ const BottomNav = () => {
       <div className="max-w-lg mx-auto px-4">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
-            const Icon = item.icon;
             const isActive = location.pathname === item.path;
             
             return (
@@ -29,9 +29,9 @@ const BottomNav = () => {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <Icon 
-                  size={24} 
-                  className={isActive ? 'stroke-[2.5]' : 'stroke-2'}
+                <FontAwesomeIcon 
+                  icon={item.icon} 
+                  className={`text-2xl ${isActive ? 'text-primary-600' : 'text-gray-500'}`}
                 />
                 <span className={`text-xs mt-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
                   {item.label}

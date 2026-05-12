@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Camera, CheckCircle } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCamera, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
 
 const Booking = () => {
@@ -224,7 +225,7 @@ const Booking = () => {
             
             {!formData.ktpImage ? (
               <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                <Camera size={40} className="text-gray-400 mb-2" />
+                <FontAwesomeIcon icon={faCamera} className="text-5xl text-gray-400 mb-2" />
                 <span className="text-sm text-gray-500 font-medium">Ambil Foto KTP</span>
                 <span className="text-xs text-gray-400 mt-1">atau pilih dari galeri</span>
                 <input
@@ -268,7 +269,7 @@ const Booking = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center animate-scale-in">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={32} className="text-green-600" />
+              <FontAwesomeIcon icon={faCheckCircle} className="text-4xl text-green-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Booking Berhasil!</h3>
             <p className="text-gray-600">Data penyewa telah disimpan</p>
