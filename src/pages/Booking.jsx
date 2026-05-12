@@ -231,7 +231,6 @@ const Booking = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={handleImageCapture}
                   className="hidden"
                 />
