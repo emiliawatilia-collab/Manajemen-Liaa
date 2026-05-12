@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCamera, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faCamera, faCheckCircle, faImage } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
 
 const Booking = () => {
@@ -224,17 +224,34 @@ const Booking = () => {
             </label>
             
             {!formData.ktpImage ? (
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                <FontAwesomeIcon icon={faCamera} className="text-5xl text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500 font-medium">Ambil Foto KTP</span>
-                <span className="text-xs text-gray-400 mt-1">atau pilih dari galeri</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageCapture}
-                  className="hidden"
-                />
-              </label>
+              <div className="space-y-3">
+                {/* Button Kamera */}
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary-300 rounded-xl cursor-pointer hover:bg-primary-50 transition-colors bg-primary-50/50">
+                  <FontAwesomeIcon icon={faCamera} className="text-4xl text-primary-600 mb-2" />
+                  <span className="text-sm text-primary-700 font-semibold">📷 Ambil Foto</span>
+                  <span className="text-xs text-primary-600 mt-1">Buka kamera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageCapture}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Button Galeri */}
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50/50">
+                  <FontAwesomeIcon icon={faImage} className="text-4xl text-blue-600 mb-2" />
+                  <span className="text-sm text-blue-700 font-semibold">🖼️ Pilih dari Galeri</span>
+                  <span className="text-xs text-blue-600 mt-1">Pilih foto yang sudah ada</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageCapture}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             ) : (
               <div className="relative">
                 <img
