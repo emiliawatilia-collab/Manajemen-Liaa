@@ -5,7 +5,7 @@ import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
 
 const Units = () => {
-  const { units, loading, createUnit, checkoutUnit, removeUnit } = useUnits();
+  const { units, loading, createUnit, removeUnit } = useUnits();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, terisi, kosong
   const [showAddModal, setShowAddModal] = useState(false);
@@ -35,17 +35,7 @@ const Units = () => {
   };
 
   // Checkout function
-  const handleCheckout = async (firebaseId) => {
-    if (!confirm('Yakin ingin checkout unit ini?')) return;
-    
-    try {
-      await checkoutUnit(firebaseId);
-    } catch (error) {
-      console.error('Error checkout:', error);
-      alert('Gagal checkout unit');
-    }
-  };
-
+  
   // Delete unit function
   const handleDeleteUnit = async (firebaseId) => {
     const unit = units.find(u => u.firebaseId === firebaseId);
@@ -149,7 +139,6 @@ const Units = () => {
               <UnitCard 
                 key={unit.id} 
                 unit={unit} 
-                onCheckout={handleCheckout}
                 onDelete={handleDeleteUnit}
               />
             ))}

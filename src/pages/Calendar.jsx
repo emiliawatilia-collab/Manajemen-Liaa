@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faCalendarAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faCalendarAlt, faPlus, faUser, faBuilding, faSun } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { useUnits } from '../hooks/useUnits';
 
@@ -255,11 +255,14 @@ const Calendar = () => {
 
         {/* Legend */}
         <div className="mt-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">📖 Keterangan</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <FontAwesomeIcon icon={faCalendarAlt} className="text-primary-600" />
+            Keterangan
+          </h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-2 bg-red-50 rounded-lg border-l-4 border-red-500">
               <div className="w-8 h-8 bg-red-100 border-2 border-red-300 rounded flex items-center justify-center">
-                <span className="text-xs">👤</span>
+                <FontAwesomeIcon icon={faUser} className="text-red-600" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-gray-700">Unit Terisi</div>
@@ -268,7 +271,9 @@ const Calendar = () => {
             </div>
             
             <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-              <div className="w-8 h-8 bg-white border-2 border-gray-300 rounded"></div>
+              <div className="w-8 h-8 bg-white border-2 border-gray-300 rounded flex items-center justify-center">
+                <FontAwesomeIcon icon={faBuilding} className="text-gray-400" />
+              </div>
               <div>
                 <div className="text-sm font-semibold text-gray-700">Unit Kosong</div>
                 <div className="text-xs text-gray-500">Tidak ada penyewa, siap disewakan</div>
@@ -277,7 +282,7 @@ const Calendar = () => {
             
             <div className="flex items-center gap-3 p-2 bg-primary-50 rounded-lg border-l-4 border-primary-500">
               <div className="w-8 h-8 bg-primary-100 border-2 border-primary-300 rounded flex items-center justify-center">
-                <span className="text-xs">📅</span>
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-primary-600" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-gray-700">Hari Ini</div>
@@ -287,7 +292,7 @@ const Calendar = () => {
             
             <div className="flex items-center gap-3 p-2 bg-red-50 rounded-lg border-l-4 border-pink-300">
               <div className="w-8 h-8 bg-red-50 border-2 border-pink-200 rounded flex items-center justify-center">
-                <span className="text-xs">🏖️</span>
+                <FontAwesomeIcon icon={faSun} className="text-pink-500" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-gray-700">Weekend</div>

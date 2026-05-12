@@ -6,7 +6,7 @@ import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
 
 const Dashboard = () => {
-  const { units, loading } = useUnits();
+  const { units, loading, checkoutUnit } = useUnits();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
 
@@ -31,13 +31,25 @@ const Dashboard = () => {
     setShowDetailModal(true);
   };
 
+  // Checkout function
+  const handleCheckout = async (firebaseId) => {
+    if (!confirm('Yakin ingin checkout unit ini?')) return;
+    
+    try {
+      await checkoutUnit(firebaseId);
+    } catch (error) {
+      console.error('Error checkout:', error);
+      alert('Gagal checkout unit');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-8">
           <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-          <p className="text-primary-100 text-sm">Manajemen Apartemen</p>
+          <p className="text-primary-100 text-sm">Manajemen ApartemenByliaa</p>
         </div>
       </div>
 
@@ -102,7 +114,12 @@ const Dashboard = () => {
         {recentBookings.length > 0 ? (
           <div className="space-y-3">
             {recentBookings.map((unit) => (
-              <UnitCard key={unit.id} unit={unit} onShowDetail={handleShowDetail} />
+              <UnitCard 
+                key={unit.id} 
+                unit={unit} 
+                onShowDetail={handleShowDetail}
+                onCheckout={handleCheckout}
+              />
             ))}
           </div>
         ) : (
