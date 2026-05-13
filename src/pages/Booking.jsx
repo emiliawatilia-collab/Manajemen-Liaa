@@ -10,6 +10,7 @@ const Booking = () => {
     unitId: '',
     tenantName: '',
     phone: '',
+    rentalType: 'harian', // 'harian' or 'transit'
     checkIn: new Date().toISOString().split('T')[0],
     checkInTime: '',
     checkOut: '',
@@ -18,6 +19,27 @@ const Booking = () => {
     ktpImage: null,
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState(''); // For formatted display
+
+  // Format number with thousand separator
+  const formatNumber = (value) => {
+    if (!value) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Remove formatting to get raw number
+  const unformatNumber = (value) => {
+    return value.replace(/\./g, '');
+  };
+
+  // Handle price input with formatting
+  const handlePriceChange = (e) => {
+    const rawValue = unformatNumber(e.target.value);
+    if (rawValue === '' || /^\d+$/.test(rawValue)) {
+      setFormData({ ...formData, price: rawValue });
+      setPriceDisplay(formatNumber(rawValue));
+    }
+  };
 
   const handleImageCapture = (e) => {
     const file = e.target.files[0];
@@ -59,6 +81,7 @@ const Booking = () => {
           unitId: '',
           tenantName: '',
           phone: '',
+          rentalType: 'harian',
           checkIn: new Date().toISOString().split('T')[0],
           checkInTime: '',
           checkOut: '',
@@ -66,6 +89,7 @@ const Booking = () => {
           price: '',
           ktpImage: null,
         });
+        setPriceDisplay(''); // Reset price display
       }, 2000);
     } catch (error) {
       console.error('Error booking unit:', error);
@@ -141,79 +165,141 @@ const Booking = () => {
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-4">
             <h3 className="font-semibold text-gray-900">Periode Sewa</h3>
             
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Check-in
-                </label>
-                <input
-                  type="date"
-                  value={formData.checkIn}
-                  onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jam Check-in <span className="text-gray-400 text-xs">(Opsional)</span>
-                </label>
-                <input
-                  type="time"
-                  value={formData.checkInTime}
-                  onChange={(e) => setFormData({ ...formData, checkInTime: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Check-out
-                </label>
-                <input
-                  type="date"
-                  value={formData.checkOut}
-                  onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jam Check-out <span className="text-gray-400 text-xs">(Opsional)</span>
-                </label>
-                <input
-                  type="time"
-                  value={formData.checkOutTime}
-                  onChange={(e) => setFormData({ ...formData, checkOutTime: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+            {/* Rental Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Tipe Sewa
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, rentalType: 'harian', checkInTime: '', checkOutTime: '' })}
+                  className={`py-3 px-4 rounded-xl font-semibold transition-all ${
+                    formData.rentalType === 'harian'
+                      ? 'bg-primary-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Harian
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, rentalType: 'transit' })}
+                  className={`py-3 px-4 rounded-xl font-semibold transition-all ${
+                    formData.rentalType === 'transit'
+                      ? 'bg-primary-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Transit/Per Jam
+                </button>
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-              <p className="text-xs text-blue-700">
-                💡 <strong>Untuk transit/per jam:</strong> Isi jam check-in dan check-out. Contoh: 18.00 - 19.00
-              </p>
-            </div>
+            {/* Harian Mode */}
+            {formData.rentalType === 'harian' && (
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                  <p className="text-xs text-blue-700">
+                    <strong>Sewa Harian:</strong> Pilih tanggal check-in dan check-out (minimal 1 hari)
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tanggal Masuk
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.checkIn}
+                      onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tanggal Keluar
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.checkOut}
+                      onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Transit Mode */}
+            {formData.rentalType === 'transit' && (
+              <>
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
+                  <p className="text-xs text-orange-700">
+                    <strong>Sewa Transit:</strong> Untuk sewa per jam (contoh: 18.00 - 19.00)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tanggal
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.checkIn}
+                    onChange={(e) => setFormData({ ...formData, checkIn: e.target.value, checkOut: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Jam Masuk
+                    </label>
+                    <input
+                      type="time"
+                      value={formData.checkInTime}
+                      onChange={(e) => setFormData({ ...formData, checkInTime: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Jam Keluar
+                    </label>
+                    <input
+                      type="time"
+                      value={formData.checkOutTime}
+                      onChange={(e) => setFormData({ ...formData, checkOutTime: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Harga Sewa (Rp/hari)
+                Harga Sewa (Rp/{formData.rentalType === 'harian' ? 'hari' : 'jam'})
               </label>
               <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="Contoh: 140000 atau 150000"
+                type="text"
+                value={priceDisplay}
+                onChange={handlePriceChange}
+                placeholder={formData.rentalType === 'harian' ? 'Contoh: 140.000' : 'Contoh: 50.000'}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">💡 Harga bisa berbeda setiap booking</p>
+              <p className="text-xs text-gray-500 mt-1">Harga bisa berbeda setiap booking</p>
             </div>
           </div>
 
@@ -228,7 +314,7 @@ const Booking = () => {
                 {/* Button Kamera */}
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary-300 rounded-xl cursor-pointer hover:bg-primary-50 transition-colors bg-primary-50/50">
                   <FontAwesomeIcon icon={faCamera} className="text-4xl text-primary-600 mb-2" />
-                  <span className="text-sm text-primary-700 font-semibold">📷 Ambil Foto</span>
+                  <span className="text-sm text-primary-700 font-semibold">Ambil Foto</span>
                   <span className="text-xs text-primary-600 mt-1">Buka kamera</span>
                   <input
                     type="file"
@@ -242,7 +328,7 @@ const Booking = () => {
                 {/* Button Galeri */}
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50/50">
                   <FontAwesomeIcon icon={faImage} className="text-4xl text-blue-600 mb-2" />
-                  <span className="text-sm text-blue-700 font-semibold">🖼️ Pilih dari Galeri</span>
+                  <span className="text-sm text-blue-700 font-semibold">Pilih dari Galeri</span>
                   <span className="text-xs text-blue-600 mt-1">Pilih foto yang sudah ada</span>
                   <input
                     type="file"

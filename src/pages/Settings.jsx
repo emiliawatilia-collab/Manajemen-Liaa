@@ -1,15 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCog, faPlus, faEdit, faTrash, faSave, faTimes, faSync } from '@fortawesome/free-solid-svg-icons';
 
 const Settings = () => {
   const [units, setUnits] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     unitNumber: '',
     price: '350000',
     pricePerMonth: '3500000',
   });
+
+  // Force update app
+  const handleForceUpdate = async () => {
+    setIsUpdating(true);
+    
+    try {
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      
+      // Show success message
+      alert('✅ Cache berhasil dihapus! App akan reload dengan versi terbaru.');
+      
+      // Reload page
+      window.location.reload(true);
+    } catch (error) {
+      console.error('Error updating app:', error);
+      alert('❌ Gagal update. Coba tutup dan buka app lagi.');
+      setIsUpdating(false);
+    }
+  };
 
   // Load units from localStorage
   useEffect(() => {
@@ -100,7 +133,7 @@ const Settings = () => {
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-6">
           <div className="flex items-center gap-3 mb-2">
-            <SettingsIcon size={28} />
+            <FontAwesomeIcon icon={faCog} className="text-2xl" />
             <h1 className="text-2xl font-bold">Pengaturan</h1>
           </div>
           <p className="text-primary-100 text-sm">Kelola unit apartemen</p>
@@ -109,12 +142,22 @@ const Settings = () => {
 
       {/* Content */}
       <div className="px-4 py-6">
+        {/* Update App Button */}
+        <button
+          onClick={handleForceUpdate}
+          disabled={isUpdating}
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all mb-4 disabled:opacity-50"
+        >
+          <FontAwesomeIcon icon={faSync} className={isUpdating ? 'animate-spin' : ''} />
+          {isUpdating ? 'Mengupdate...' : '🔄 Update App ke Versi Terbaru'}
+        </button>
+
         {/* Add Button */}
         <button
           onClick={() => setShowAddModal(true)}
           className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all mb-6"
         >
-          <Plus size={20} />
+          <FontAwesomeIcon icon={faPlus} />
           Tambah Unit Baru
         </button>
 
@@ -146,7 +189,7 @@ const Settings = () => {
           
           {units.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <SettingsIcon size={48} className="mx-auto text-gray-300 mb-3" />
+              <FontAwesomeIcon icon={faCog} className="text-5xl text-gray-300 mb-3" />
               <p className="text-gray-500">Belum ada unit</p>
               <p className="text-sm text-gray-400 mt-1">Tambah unit pertama Anda</p>
             </div>
@@ -200,7 +243,7 @@ const Settings = () => {
                         type="submit"
                         className="flex-1 bg-primary-600 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2"
                       >
-                        <Save size={18} />
+                        <FontAwesomeIcon icon={faSave} />
                         Simpan
                       </button>
                       <button
@@ -208,7 +251,7 @@ const Settings = () => {
                         onClick={handleCancelEdit}
                         className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium flex items-center justify-center gap-2"
                       >
-                        <X size={18} />
+                        <FontAwesomeIcon icon={faTimes} />
                         Batal
                       </button>
                     </div>
@@ -258,7 +301,7 @@ const Settings = () => {
                         onClick={() => handleEditUnit(unit)}
                         className="flex-1 bg-primary-50 text-primary-600 py-2 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-primary-100 transition-colors"
                       >
-                        <Edit2 size={16} />
+                        <FontAwesomeIcon icon={faEdit} />
                         Edit
                       </button>
                       <button
@@ -270,7 +313,7 @@ const Settings = () => {
                             : 'bg-red-50 text-red-600 hover:bg-red-100'
                         }`}
                       >
-                        <Trash2 size={16} />
+                        <FontAwesomeIcon icon={faTrash} />
                         Hapus
                       </button>
                     </div>
@@ -298,7 +341,7 @@ const Settings = () => {
                 onClick={() => setShowAddModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <X size={24} />
+                <FontAwesomeIcon icon={faTimes} className="text-xl" />
               </button>
             </div>
 

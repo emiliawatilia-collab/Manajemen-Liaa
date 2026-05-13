@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faCalendarAlt, faPlus, faUser, faBuilding, faSun } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faCalendarAlt, faPlus, faUser, faBuilding, faSun, faClock, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { useUnits } from '../hooks/useUnits';
 
@@ -176,7 +176,7 @@ const Calendar = () => {
                     return (
                       <th
                         key={date}
-                        className={`min-w-[64px] p-2 text-center border-r border-gray-200 ${
+                        className={`min-w-[100px] p-2 text-center border-r border-gray-200 ${
                           isToday ? 'bg-primary-100' : isWeekend ? 'bg-red-50' : 'bg-gray-50'
                         }`}
                       >
@@ -209,31 +209,34 @@ const Calendar = () => {
                       const occupied = isUnitOccupied(unit, date);
                       const tenantName = occupied ? getTenantName(unit) : '';
                       const tenantTime = occupied ? getTenantTime(unit, date) : '';
+                      const tenantPhone = occupied && unit.tenant?.phone ? unit.tenant.phone : '';
                       const isFirstDay = occupied && (date === 1 || !isUnitOccupied(unit, date - 1));
                       
                       return (
                         <td
                           key={date}
-                          className={`min-w-[64px] p-2 border-r border-gray-100 min-h-[60px] align-top ${
+                          className={`min-w-[100px] p-2 border-r border-gray-100 min-h-[70px] align-top ${
                             occupied ? 'bg-red-50 border-l-4 border-l-red-500' : 'bg-white'
                           }`}
                         >
                           {isFirstDay && tenantName && (
                             <div className="space-y-1">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs">👤</span>
-                                <span className="text-xs font-bold text-red-700">
+                              <div className="flex items-start gap-1">
+                                <FontAwesomeIcon icon={faUser} className="text-xs text-red-700 flex-shrink-0" />
+                                <span className="text-xs font-bold text-red-700 break-words">
                                   {tenantName}
                                 </span>
                               </div>
                               {tenantTime && (
-                                <div className="text-[10px] font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
-                                  🕐 {tenantTime}
+                                <div className="text-[10px] font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded inline-block">
+                                  <FontAwesomeIcon icon={faClock} className="mr-1" />
+                                  {tenantTime}
                                 </div>
                               )}
-                              {unit.tenant?.phone && (
-                                <div className="text-[9px] text-red-600">
-                                  📞 {unit.tenant.phone.substring(0, 8)}...
+                              {tenantPhone && (
+                                <div className="text-[10px] text-red-600 break-all">
+                                  <FontAwesomeIcon icon={faPhone} className="mr-1" />
+                                  {tenantPhone}
                                 </div>
                               )}
                             </div>

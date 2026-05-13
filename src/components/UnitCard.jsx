@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faUser, faCalendarAlt, faPhone } from '@fortawesome/free-solid-svg-icons';
+import CountdownTimer from './CountdownTimer';
 
 const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
   const isOccupied = unit.status === 'terisi';
@@ -52,6 +53,14 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                 </span>
               </div>
 
+              {/* Countdown Timer for Transit Bookings */}
+              <CountdownTimer 
+                checkIn={unit.tenant.checkIn}
+                checkInTime={unit.tenant.checkInTime}
+                checkOut={unit.tenant.checkOut}
+                checkOutTime={unit.tenant.checkOutTime}
+              />
+
               {unit.tenant.phone && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <FontAwesomeIcon icon={faPhone} className="text-gray-400" />
@@ -96,7 +105,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                   }}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-colors"
                 >
-                  📄 Lihat Detail & KTP
+                  Lihat Detail & KTP
                 </button>
               )}
               <div className="grid grid-cols-2 gap-2">
@@ -135,7 +144,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                   }}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-colors"
                 >
-                  📄 Lihat Detail
+                  Lihat Detail
                 </button>
               )}
               {onDelete && (
@@ -146,7 +155,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                   }}
                   className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium text-sm transition-colors"
                 >
-                  🗑️ Hapus Unit
+                  Hapus Unit
                 </button>
               )}
             </div>

@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# WhatsApp Bot Auth (JANGAN COMMIT!)
+whatsapp-bot-apartemen/.wwebjs_auth/
+whatsapp-bot-apartemen/.wwebjs_cache/
+whatsapp-bot-apartemen/auth_info_baileys/
+
+# Test files
+test-booking.js

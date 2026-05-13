@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { subscribeToUnits, addUnit, updateUnit, deleteUnit } from '../services/firebase';
+import { clearNotificationFlag } from '../services/checkoutMonitor';
 
 export const useUnits = () => {
   const [units, setUnits] = useState([]);
@@ -53,6 +54,12 @@ export const useUnits = () => {
   // Checkout unit (set to empty)
   const checkoutUnit = async (firebaseId) => {
     try {
+      // Get unit data before checkout to clear notification flag
+      const unit = units.find(u => u.firebaseId === firebaseId);
+      if (unit && unit.tenant) {
+        clearNotificationFlag(firebaseId, unit.tenant.checkOut);
+      }
+      
       await updateUnit(firebaseId, {
         status: 'kosong',
         tenant: null

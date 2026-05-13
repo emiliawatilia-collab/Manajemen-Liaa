@@ -1,14 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding, faHome, faChartLine, faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import StatCard from '../components/StatCard';
 import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
+import { monitorCheckouts } from '../services/checkoutMonitor';
+import { checkBotStatus } from '../services/whatsappService';
 
 const Dashboard = () => {
   const { units, loading, checkoutUnit } = useUnits();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
+  const [botConnected, setBotConnected] = useState(false);
+
+  // Check bot status on mount
+  useEffect(() => {
+    checkBotStatus().then(connected => {
+      setBotConnected(connected);
+      if (connected) {
+        console.log('✅ WhatsApp Bot terhubung');
+      } else {
+        console.warn('⚠️ WhatsApp Bot tidak terhubung. Jalankan: cd whatsapp-bot-apartemen && node bot-wweb.js');
+      }
+    });
+  }, []);
+
+  // Monitor checkouts every minute (otomatis kirim ke grup WhatsApp)
+  useEffect(() => {
+    if (!botConnected || units.length === 0) return;
+
+    // Check immediately
+    monitorCheckouts(units);
+
+    // Check every minute
+    const interval = setInterval(() => {
+      monitorCheckouts(units);
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [units, botConnected]);
 
   const occupiedUnits = units.filter(u => u.status === 'terisi');
   const emptyUnits = units.filter(u => u.status === 'kosong');
@@ -22,8 +52,8 @@ const Dashboard = () => {
     return sum + bookingPrice;
   }, 0);
 
-  // Get recent bookings (occupied units)
-  const recentBookings = occupiedUnits.slice(0, 3);
+  // Get recent bookings (occupied units) - show all
+  const recentBookings = occupiedUnits;
 
   // Show detail function
   const handleShowDetail = (unit) => {
@@ -155,7 +185,7 @@ const Dashboard = () => {
                     ? 'bg-red-100 text-red-700'
                     : 'bg-green-100 text-green-700'
                 }`}>
-                  {selectedUnit.status === 'terisi' ? '🔴 Unit Terisi' : '🟢 Unit Kosong'}
+                  {selectedUnit.status === 'terisi' ? 'Unit Terisi' : 'Unit Kosong'}
                 </span>
               </div>
 
@@ -235,7 +265,7 @@ const Dashboard = () => {
 
                   {selectedUnit.tenant.ktpImage && (
                     <div className="bg-gray-50 rounded-xl p-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">📄 Foto KTP</h4>
+                      <h4 className="font-semibold text-gray-900 mb-3">Foto KTP</h4>
                       <div className="rounded-xl overflow-hidden border-2 border-gray-200">
                         <img
                           src={selectedUnit.tenant.ktpImage}
