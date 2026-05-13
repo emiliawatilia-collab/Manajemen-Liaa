@@ -1,9 +1,15 @@
 // WhatsApp Service untuk mengirim notifikasi checkout
-const WHATSAPP_BOT_URL = 'http://localhost:3001';
+const WHATSAPP_BOT_URL = import.meta.env.VITE_WHATSAPP_BOT_URL || 'http://localhost:3001';
 const ADMIN_GROUP_ID = '120363421176803388@g.us'; // Grup "Apartemen"
 
 export const sendCheckoutReminder = async (unit) => {
   try {
+    // Skip if bot URL is not configured or in production without bot
+    if (!WHATSAPP_BOT_URL || WHATSAPP_BOT_URL.includes('localhost')) {
+      console.log('⚠️ WhatsApp Bot tidak tersedia di production. Notifikasi dilewati.');
+      return false;
+    }
+
     const checkOutDate = new Date(unit.tenant?.checkOut);
     const checkOutTime = unit.tenant?.checkOutTime || '12:00';
     
@@ -54,6 +60,12 @@ _Notifikasi otomatis dari Sistem Manajemen Apartemen_`;
 
 export const checkBotStatus = async () => {
   try {
+    // Skip if bot URL is not configured or in production without bot
+    if (!WHATSAPP_BOT_URL || WHATSAPP_BOT_URL.includes('localhost')) {
+      console.log('⚠️ WhatsApp Bot hanya tersedia di development (localhost)');
+      return false;
+    }
+
     const response = await fetch(`${WHATSAPP_BOT_URL}/status`);
     const result = await response.json();
     return result.connected && result.ready;
