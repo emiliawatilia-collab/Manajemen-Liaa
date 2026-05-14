@@ -1,15 +1,9 @@
 // WhatsApp Service untuk mengirim notifikasi checkout
-const WHATSAPP_BOT_URL = import.meta.env.VITE_WHATSAPP_BOT_URL || 'http://localhost:3001';
+const WHATSAPP_BOT_URL = import.meta.env.VITE_WHATSAPP_BOT_URL || 'http://localhost:8080';
 const ADMIN_GROUP_ID = '120363421176803388@g.us'; // Grup "Apartemen"
 
 export const sendCheckoutReminder = async (unit) => {
   try {
-    // Skip if bot URL is not configured or in production without bot
-    if (!WHATSAPP_BOT_URL || WHATSAPP_BOT_URL.includes('localhost')) {
-      console.log('⚠️ WhatsApp Bot tidak tersedia di production. Notifikasi dilewati.');
-      return false;
-    }
-
     const checkOutDate = new Date(unit.tenant?.checkOut);
     const checkOutTime = unit.tenant?.checkOutTime || '12:00';
     
@@ -31,6 +25,8 @@ Mohon konfirmasi:
 ✅ Atau hubungi tamu untuk perpanjang
 
 _Notifikasi otomatis dari Sistem Manajemen Apartemen_`;
+
+    console.log(`📤 Mengirim notifikasi ke ${WHATSAPP_BOT_URL}...`);
 
     const response = await fetch(`${WHATSAPP_BOT_URL}/send-group-message`, {
       method: 'POST',
@@ -60,14 +56,13 @@ _Notifikasi otomatis dari Sistem Manajemen Apartemen_`;
 
 export const checkBotStatus = async () => {
   try {
-    // Skip if bot URL is not configured or in production without bot
-    if (!WHATSAPP_BOT_URL || WHATSAPP_BOT_URL.includes('localhost')) {
-      console.log('⚠️ WhatsApp Bot hanya tersedia di development (localhost)');
-      return false;
-    }
-
+    console.log(`🔍 Checking bot status at ${WHATSAPP_BOT_URL}...`);
+    
     const response = await fetch(`${WHATSAPP_BOT_URL}/status`);
     const result = await response.json();
+    
+    console.log('📊 Bot status:', result);
+    
     return result.connected && result.ready;
   } catch (error) {
     console.error('❌ Bot WhatsApp tidak terhubung:', error);

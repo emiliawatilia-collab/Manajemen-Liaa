@@ -25,59 +25,61 @@
 3. Pilih repository: **Manajemen-Liaa**
 4. Railway akan detect project
 
-### Step 3: Konfigurasi Service
+### Step 3: ⚠️ PENTING - Set Root Directory
 
-1. Railway akan detect multiple services
-2. Pilih **"whatsapp-bot-apartemen"** folder
-3. Atau klik **"Add Service"** → **"GitHub Repo"**
-4. Set **Root Directory**: `whatsapp-bot-apartemen`
+**Build sudah jalan tapi belum benar!** Harus set root directory dulu:
 
-### Step 4: Set Environment Variables (Opsional)
+1. Di Railway dashboard, klik **service** yang baru dibuat
+2. Klik tab **"Settings"**
+3. Scroll ke bawah, cari **"Root Directory"**
+4. Klik dropdown, pilih **`/whatsapp-bot-apartemen`**
+5. Railway akan **otomatis redeploy** (tunggu 2-3 menit)
+6. ✅ Sekarang bot akan jalan dari folder yang benar!
 
-Di Railway dashboard:
-1. Klik service bot
-2. Tab **"Variables"**
-3. Tambahkan (jika perlu):
-   - `NODE_ENV` = `production`
-   - `PORT` = `3001` (otomatis dari Railway)
+### Step 4: Lihat Logs & Scan QR Code
 
-### Step 5: Deploy!
-
-1. Railway otomatis build dan deploy
-2. Tunggu 2-3 menit
-3. Status akan berubah **"Active"**
-
-### Step 6: Scan QR Code
+Setelah redeploy selesai (Step 3):
 
 1. Klik service bot di Railway
-2. Tab **"Deployments"** → Klik deployment terbaru
-3. Tab **"Logs"**
-4. Scroll ke bawah, cari QR code ASCII
-5. **Scan dengan WhatsApp** (081522735657)
-6. Tunggu sampai muncul: `✅ WhatsApp Bot Connected!`
+2. Klik tab **"Deployments"**
+3. Klik deployment yang **paling atas** (terbaru)
+4. Klik tab **"View Logs"**
+5. Tunggu 30-60 detik, scroll ke bawah
+6. Cari **QR code ASCII** (kotak-kotak hitam putih)
+7. **Scan dengan WhatsApp** di HP (081522735657)
+8. Tunggu sampai muncul: `✅ WhatsApp Bot Connected!`
 
-### Step 7: Dapatkan URL Bot
+### Step 5: Generate Domain (URL Bot)
 
-1. Tab **"Settings"**
+1. Klik tab **"Settings"**
 2. Scroll ke **"Networking"**
 3. Klik **"Generate Domain"**
 4. Copy URL (contoh: `whatsapp-bot-production.up.railway.app`)
+5. ✅ Simpan URL ini untuk Step 6
 
-### Step 8: Update React App
+### Step 6: Update Vercel (React App)
 
-Edit `src/services/whatsappService.js`:
+Di **Vercel Dashboard**:
 
-```javascript
-const WHATSAPP_BOT_URL = import.meta.env.VITE_WHATSAPP_BOT_URL || 'http://localhost:3001';
-```
-
-Lalu di **Vercel**, tambahkan environment variable:
-1. Buka project di Vercel
-2. Settings → Environment Variables
-3. Tambahkan:
+1. Buka project **Manajemen-Liaa** di Vercel
+2. Klik **"Settings"**
+3. Klik **"Environment Variables"**
+4. Klik **"Add New"**
+5. Isi:
    - **Key**: `VITE_WHATSAPP_BOT_URL`
-   - **Value**: `https://whatsapp-bot-production.up.railway.app`
-4. Redeploy Vercel
+   - **Value**: `https://whatsapp-bot-production.up.railway.app` (URL dari Step 5)
+   - **Environment**: Pilih **Production**, **Preview**, **Development** (centang semua)
+6. Klik **"Save"**
+7. Klik **"Deployments"** (tab atas)
+8. Klik **titik tiga** di deployment teratas
+9. Klik **"Redeploy"**
+10. ✅ Tunggu redeploy selesai (2-3 menit)
+
+---
+
+## 🎉 Selesai!
+
+Bot WhatsApp sekarang aktif 24/7 dan terhubung dengan aplikasi React!
 
 ---
 

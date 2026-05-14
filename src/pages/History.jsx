@@ -57,7 +57,7 @@ const History = () => {
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-6">
           <h1 className="text-2xl font-bold mb-1">Histori Booking</h1>
-          <p className="text-primary-100 text-sm">Riwayat penyewaan unit</p>
+          <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
         </div>
       </div>
 

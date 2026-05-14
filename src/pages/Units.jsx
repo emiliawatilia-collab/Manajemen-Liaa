@@ -70,7 +70,10 @@ const Units = () => {
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Daftar Unit</h1>
+            <div>
+              <h1 className="text-2xl font-bold">Daftar Unit</h1>
+              <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
+            </div>
             <button
               onClick={() => setShowAddModal(true)}
               className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"

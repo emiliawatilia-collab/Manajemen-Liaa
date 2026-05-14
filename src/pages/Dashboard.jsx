@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [botConnected, setBotConnected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Check bot status on mount
   useEffect(() => {
@@ -52,8 +53,35 @@ const Dashboard = () => {
     return sum + bookingPrice;
   }, 0);
 
+  // Format revenue untuk display
+  const formatRevenue = (amount) => {
+    if (amount >= 1000000) {
+      // Juta
+      return `${(amount / 1000000).toFixed(1)}jt`;
+    } else if (amount >= 1000) {
+      // Ribu
+      return `${(amount / 1000).toFixed(0)}rb`;
+    } else {
+      return amount.toString();
+    }
+  };
+
   // Get recent bookings (occupied units) - show all
   const recentBookings = occupiedUnits;
+
+  // Filter bookings by search query
+  const filteredBookings = recentBookings.filter(unit => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const unitNumber = unit.unitNumber.toLowerCase();
+    const tenantName = (unit.tenant?.name || '').toLowerCase();
+    const tenantPhone = (unit.tenant?.phone || '').toLowerCase();
+    
+    return unitNumber.includes(query) || 
+           tenantName.includes(query) || 
+           tenantPhone.includes(query);
+  });
 
   // Show detail function
   const handleShowDetail = (unit) => {
@@ -79,7 +107,7 @@ const Dashboard = () => {
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-8">
           <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-          <p className="text-primary-100 text-sm">Manajemen ApartemenByliaa</p>
+          <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
         </div>
       </div>
 
@@ -108,8 +136,8 @@ const Dashboard = () => {
           />
           <StatCard
             icon={faDollarSign}
-            label="Revenue/Hari"
-            value={`Rp ${(totalRevenue / 1000).toFixed(0)}K`}
+            label="Revenue"
+            value={`Rp ${formatRevenue(totalRevenue)}`}
             color="purple"
           />
         </div>
@@ -141,9 +169,42 @@ const Dashboard = () => {
           </a>
         </div>
 
-        {recentBookings.length > 0 ? (
+        {/* Search Bar */}
+        {recentBookings.length > 0 && (
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Cari unit, nama, atau nomor HP..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <svg 
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {filteredBookings.length > 0 ? (
           <div className="space-y-3">
-            {recentBookings.map((unit) => (
+            {filteredBookings.map((unit) => (
               <UnitCard 
                 key={unit.id} 
                 unit={unit} 
@@ -152,12 +213,20 @@ const Dashboard = () => {
               />
             ))}
           </div>
-        ) : (
+        ) : searchQuery ? (
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+            <svg className="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p className="text-gray-500 mb-2">Tidak ditemukan</p>
+            <p className="text-sm text-gray-400">Coba kata kunci lain</p>
+          </div>
+        ) : recentBookings.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
             <FontAwesomeIcon icon={faBuilding} className="text-5xl text-gray-300 mb-3" />
             <p className="text-gray-500">Belum ada unit terisi</p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Detail Modal */}

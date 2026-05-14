@@ -22,12 +22,28 @@ let qrCodeData = null;
 
 // Initialize WhatsApp Client
 function initializeClient() {
+    // Puppeteer config untuk Railway/Production
+    const puppeteerConfig = {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+    };
+
+    // Jika di Railway, gunakan Chromium sistem
+    if (process.env.RAILWAY_ENVIRONMENT) {
+        puppeteerConfig.executablePath = '/usr/bin/chromium';
+    }
+
     client = new Client({
         authStrategy: new LocalAuth(),
-        puppeteer: {
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        }
+        puppeteer: puppeteerConfig
     });
 
     client.on('qr', (qr) => {
@@ -194,7 +210,7 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 WhatsApp Bot API running on port ${PORT}`);
     console.log(`📡 API Endpoints:`);

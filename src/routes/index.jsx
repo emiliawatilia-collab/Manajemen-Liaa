@@ -5,6 +5,7 @@ import Units from '../pages/Units';
 import Calendar from '../pages/Calendar';
 import Booking from '../pages/Booking';
 import History from '../pages/History';
+import Reports from '../pages/Reports';
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
       {
         path: 'history',
         element: <History />,
+      },
+      {
+        path: 'reports',
+        element: <Reports />,
       },
       {
         path: 'settings',

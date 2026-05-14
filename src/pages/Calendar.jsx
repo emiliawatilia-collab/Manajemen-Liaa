@@ -86,8 +86,11 @@ const Calendar = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top sticky top-0 z-20">
         <div className="px-4 pt-6 pb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Kalender Booking</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-2xl font-bold">Kalender Booking</h1>
+              <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
+            </div>
             <button
               onClick={goToToday}
               className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-medium hover:bg-white/30 transition-colors"
