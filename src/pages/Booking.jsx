@@ -56,16 +56,21 @@ const Booking = () => {
     e.preventDefault();
     
     // Validation
-    if (rentalType === 'transit') {
+    if (formData.rentalType === 'transit') {
       if (!formData.checkInTime || !formData.checkOutTime) {
         alert('Untuk booking transit, jam check-in dan check-out harus diisi!');
         return;
       }
-    }
-    
-    if (!formData.checkOut) {
-      alert('Tanggal check-out harus diisi!');
-      return;
+      // For transit, checkout date is same as checkin date
+      if (!formData.checkOut) {
+        formData.checkOut = formData.checkIn;
+      }
+    } else {
+      // For daily rental, checkout date is required
+      if (!formData.checkOut) {
+        alert('Tanggal check-out harus diisi!');
+        return;
+      }
     }
     
     // Get selected unit
@@ -81,7 +86,7 @@ const Booking = () => {
       checkOutTime: formData.checkOutTime || null,
       ktpImage: formData.ktpImage,
       price: parseInt(formData.price),
-      rentalType: rentalType,
+      rentalType: formData.rentalType,
     };
     
     try {
@@ -104,7 +109,6 @@ const Booking = () => {
           ktpImage: null,
         });
         setPriceDisplay(''); // Reset price display
-        setRentalType('harian'); // Reset rental type
       }, 2000);
     } catch (error) {
       console.error('Error booking unit:', error);
