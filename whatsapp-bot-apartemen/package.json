@@ -2,10 +2,13 @@
   "name": "whatsapp-bot-apartemen",
   "version": "1.0.0",
   "description": "WhatsApp Bot for Apartemen Management - Checkout Reminders",
-  "main": "index.js",
+  "main": "bot-wweb.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node bot-wweb.js",
+    "dev": "node bot-wweb.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [
     "whatsapp",
