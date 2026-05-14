@@ -38,13 +38,13 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400" />
                 <span>
-                  {new Date(unit.tenant.checkIn).toLocaleDateString('id-ID', { 
+                  {unit.tenant.checkIn && new Date(unit.tenant.checkIn).toLocaleDateString('id-ID', { 
                     day: 'numeric', 
                     month: 'short' 
                   })}
                   {unit.tenant.checkInTime && ` ${unit.tenant.checkInTime}`}
                   {' - '}
-                  {new Date(unit.tenant.checkOut).toLocaleDateString('id-ID', { 
+                  {unit.tenant.checkOut && new Date(unit.tenant.checkOut).toLocaleDateString('id-ID', { 
                     day: 'numeric', 
                     month: 'short',
                     year: 'numeric'

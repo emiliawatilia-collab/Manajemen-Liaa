@@ -55,6 +55,19 @@ const Booking = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validation
+    if (rentalType === 'transit') {
+      if (!formData.checkInTime || !formData.checkOutTime) {
+        alert('Untuk booking transit, jam check-in dan check-out harus diisi!');
+        return;
+      }
+    }
+    
+    if (!formData.checkOut) {
+      alert('Tanggal check-out harus diisi!');
+      return;
+    }
+    
     // Get selected unit
     const selectedUnit = emptyUnits.find(u => (u.firebaseId || u.id).toString() === formData.unitId);
     if (!selectedUnit) return;
@@ -63,11 +76,12 @@ const Booking = () => {
       name: formData.tenantName,
       phone: formData.phone,
       checkIn: formData.checkIn,
-      checkInTime: formData.checkInTime,
+      checkInTime: formData.checkInTime || null,
       checkOut: formData.checkOut,
-      checkOutTime: formData.checkOutTime,
+      checkOutTime: formData.checkOutTime || null,
       ktpImage: formData.ktpImage,
       price: parseInt(formData.price),
+      rentalType: rentalType,
     };
     
     try {
@@ -90,6 +104,7 @@ const Booking = () => {
           ktpImage: null,
         });
         setPriceDisplay(''); // Reset price display
+        setRentalType('harian'); // Reset rental type
       }, 2000);
     } catch (error) {
       console.error('Error booking unit:', error);

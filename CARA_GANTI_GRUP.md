@@ -17,7 +17,7 @@
 #### Cara A: Pakai Terminal
 
 ```bash
-curl http://localhost:3001/chats
+curl `http://localhost:3001/chats`
 ```
 
 #### Cara B: Pakai Browser
