@@ -155,6 +155,20 @@ export const useUnits = () => {
     }
   };
 
+  // Clear history for a specific unit
+  const clearUnitHistory = async (firebaseId) => {
+    try {
+      await updateUnit(firebaseId, {
+        history: []
+      });
+      console.log(`✅ History cleared for unit`);
+    } catch (err) {
+      console.error(`❌ Failed to clear history:`, err);
+      setError(err);
+      throw err;
+    }
+  };
+
   return {
     units,
     loading,
@@ -165,6 +179,7 @@ export const useUnits = () => {
     checkoutUnit,
     bookUnit,
     extendBooking,
-    updateBookingStatus
+    updateBookingStatus,
+    clearUnitHistory
   };
 };

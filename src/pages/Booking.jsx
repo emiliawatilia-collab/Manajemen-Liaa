@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 const Booking = () => {
   const { units, bookUnit } = useUnits();
+  const [bookingMode, setBookingMode] = useState('now'); // 'now' or 'future'
   const [formData, setFormData] = useState({
     unitId: '',
     tenantName: '',
@@ -58,28 +59,45 @@ const Booking = () => {
     const selectedUnit = units.find(u => (u.firebaseId || u.id).toString() === formData.unitId);
     if (!selectedUnit) return;
     
-    // Check if unit has booking/occupied and dates conflict
-    if ((selectedUnit.status === 'booking' || selectedUnit.status === 'terisi') && selectedUnit.tenant) {
-      const checkInDate = new Date(formData.checkIn);
-      const currentCheckOut = new Date(selectedUnit.tenant.checkOut);
-      checkInDate.setHours(0, 0, 0, 0);
-      currentCheckOut.setHours(0, 0, 0, 0);
-      
-      if (checkInDate <= currentCheckOut) {
-        const confirmReplace = await Swal.fire({
-          title: 'Unit Sudah Terisi',
-          html: `Unit ${selectedUnit.unitNumber} sudah terisi/booking sampai:<br/>
+    // For 'now' mode, check if unit is available
+    if (bookingMode === 'now') {
+      if (selectedUnit.status === 'terisi' || selectedUnit.status === 'booking') {
+        await Swal.fire({
+          title: 'Unit Tidak Tersedia',
+          html: `Unit ${selectedUnit.unitNumber} sedang ${selectedUnit.status === 'terisi' ? 'terisi' : 'dibooking'} sampai:<br/>
                  <strong>${new Date(selectedUnit.tenant.checkOut).toLocaleDateString('id-ID')}</strong><br/><br/>
-                 Pilih tanggal check-in setelah tanggal tersebut, atau batalkan booking ini.`,
+                 Silakan pilih unit lain atau gunakan mode "Booking Mendatang".`,
           icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3b82f6',
-          cancelButtonColor: '#6b7280',
-          confirmButtonText: 'Batalkan & Book Sekarang',
-          cancelButtonText: 'Batal'
+          confirmButtonColor: '#3b82f6'
         });
+        return;
+      }
+    }
+    
+    // For 'future' mode, check if dates conflict
+    if (bookingMode === 'future') {
+      if ((selectedUnit.status === 'booking' || selectedUnit.status === 'terisi') && selectedUnit.tenant) {
+        const checkInDate = new Date(formData.checkIn);
+        const currentCheckOut = new Date(selectedUnit.tenant.checkOut);
+        checkInDate.setHours(0, 0, 0, 0);
+        currentCheckOut.setHours(0, 0, 0, 0);
         
-        if (!confirmReplace.isConfirmed) return;
+        if (checkInDate <= currentCheckOut) {
+          const confirmReplace = await Swal.fire({
+            title: 'Unit Sudah Terisi',
+            html: `Unit ${selectedUnit.unitNumber} sudah terisi/booking sampai:<br/>
+                   <strong>${new Date(selectedUnit.tenant.checkOut).toLocaleDateString('id-ID')}</strong><br/><br/>
+                   Pilih tanggal check-in setelah tanggal tersebut, atau batalkan booking ini.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Batalkan & Book Sekarang',
+            cancelButtonText: 'Batal'
+          });
+          
+          if (!confirmReplace.isConfirmed) return;
+        }
       }
     }
     
@@ -148,6 +166,7 @@ const Booking = () => {
         ktpImage: null,
       });
       setPriceDisplay('');
+      setBookingMode('now'); // Reset to default mode
     } catch (error) {
       console.error('Error booking unit:', error);
       await Swal.fire({

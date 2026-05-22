@@ -86,29 +86,29 @@ const Calendar = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top sticky top-0 z-20">
         <div className="px-4 pt-6 pb-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold">Kalender Booking</h1>
+              <h1 className="text-2xl font-bold mb-1">Kalender Booking</h1>
               <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
             </div>
             <button
               onClick={goToToday}
-              className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-medium hover:bg-white/30 transition-colors"
+              className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-medium hover:bg-white/30 transition-colors"
             >
               Hari Ini
             </button>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-3">
             <button onClick={goToPreviousMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <FontAwesomeIcon icon={faChevronLeft} className="text-2xl" />
+              <FontAwesomeIcon icon={faChevronLeft} className="text-xl" />
             </button>
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faCalendarAlt} className="text-xl" />
+              <FontAwesomeIcon icon={faCalendarAlt} className="text-lg" />
               <span className="text-lg font-semibold">{monthName}</span>
             </div>
             <button onClick={goToNextMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <FontAwesomeIcon icon={faChevronRight} className="text-2xl" />
+              <FontAwesomeIcon icon={faChevronRight} className="text-xl" />
             </button>
           </div>
         </div>

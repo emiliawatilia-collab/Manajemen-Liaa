@@ -200,14 +200,21 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Available Units */}
       <div className="px-4 mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <div className="flex-1 text-center">
-              <p className="text-sm text-gray-500 mb-1">Tersedia</p>
-              <p className="text-3xl font-bold text-primary-600">{availableUnits.length}</p>
-              <p className="text-xs text-gray-400 mt-1">unit</p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <FontAwesomeIcon icon={faHome} className="text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-white/80 text-sm font-medium">Unit Tersedia</p>
+                <p className="text-white text-xs">Siap untuk booking</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-5xl font-bold text-white">{availableUnits.length}</p>
             </div>
           </div>
         </div>
@@ -314,7 +321,7 @@ const Dashboard = () => {
       )}
 
       {/* Upcoming Bookings */}
-      {showBooking && upcomingBookings.length > 0 && (
+      {showBooking && (
         <div className="px-4 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Booking Mendatang</h2>
@@ -323,6 +330,7 @@ const Dashboard = () => {
             </span>
           </div>
 
+          {upcomingBookings.length > 0 ? (
           <div className="space-y-3">
             {upcomingBookings
               .sort((a, b) => new Date(a.tenant.checkIn) - new Date(b.tenant.checkIn))
@@ -392,6 +400,13 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+          ) : (
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+            <FontAwesomeIcon icon={faBuilding} className="text-5xl text-gray-300 mb-3" />
+            <p className="text-gray-500">Belum ada booking mendatang</p>
+            <p className="text-sm text-gray-400 mt-2">Booking dengan check-in di masa depan akan muncul di sini</p>
+          </div>
+          )}
         </div>
       )}
 

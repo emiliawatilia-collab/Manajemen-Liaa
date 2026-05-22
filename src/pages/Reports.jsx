@@ -11,9 +11,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
 import jsPDF from 'jspdf';
+import Swal from 'sweetalert2';
 
 const Reports = () => {
-  const { units, loading } = useUnits();
+  const { units, loading, clearUnitHistory } = useUnits();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [expandedUnit, setExpandedUnit] = useState(null);
@@ -34,8 +35,8 @@ const Reports = () => {
     const seenBookings = new Set(); // Track unique bookings
     
     units.forEach(unit => {
-      // Current tenant
-      if (unit.tenant) {
+      // Current tenant - ONLY if status is 'terisi' (not 'booking')
+      if (unit.tenant && unit.status === 'terisi') {
         const bookingKey = `${unit.unitNumber}-${unit.tenant.name}-${unit.tenant.checkIn}-${unit.tenant.checkOut}`;
         if (!seenBookings.has(bookingKey)) {
           bookings.push({
@@ -43,13 +44,13 @@ const Reports = () => {
             unitNumber: unit.unitNumber,
             unitId: unit.id,
             firebaseId: unit.firebaseId,
-            isCurrent: unit.status === 'terisi'
+            isCurrent: true
           });
           seenBookings.add(bookingKey);
         }
       }
       
-      // History
+      // History - only completed bookings
       if (unit.history && unit.history.length > 0) {
         unit.history.forEach(hist => {
           const bookingKey = `${unit.unitNumber}-${hist.name}-${hist.checkIn}-${hist.checkOut}`;
@@ -67,7 +68,7 @@ const Reports = () => {
       }
     });
     
-    console.log('Total bookings found:', bookings.length);
+    console.log('Total bookings found (excluding future bookings):', bookings.length);
     return bookings;
   };
 
@@ -233,6 +234,42 @@ const Reports = () => {
     }
   };
 
+  // Clear history for a unit
+  const handleClearHistory = async (unitNumber, firebaseId) => {
+    const result = await Swal.fire({
+      title: 'Hapus History?',
+      html: `Yakin ingin menghapus semua history booking dari Unit ${unitNumber}?<br/><br/>
+             <strong>⚠️ Tindakan ini tidak bisa dibatalkan!</strong>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await clearUnitHistory(firebaseId);
+      await Swal.fire({
+        title: 'Berhasil!',
+        text: `History Unit ${unitNumber} berhasil dihapus`,
+        icon: 'success',
+        confirmButtonColor: '#3b82f6',
+        timer: 2000
+      });
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      await Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal menghapus history',
+        icon: 'error',
+        confirmButtonColor: '#3b82f6'
+      });
+    }
+  };
+
   // Export to PDF
   const exportReport = () => {
     const doc = new jsPDF();
@@ -243,7 +280,7 @@ const Reports = () => {
     // Header
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
-    doc.text('LAPORAN PENDAPATAN', pageWidth / 2, yPos, { align: 'center' });
+    doc.text('SLIP GAJI', pageWidth / 2, yPos, { align: 'center' });
     
     yPos += 10;
     doc.setFontSize(12);
@@ -266,7 +303,7 @@ const Reports = () => {
     yPos += 10;
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text('RINGKASAN', 15, yPos);
+    doc.text('RINGKASAN PENDAPATAN', 15, yPos);
     
     yPos += 8;
     doc.setFontSize(10);
@@ -349,7 +386,7 @@ const Reports = () => {
     doc.text('Dokumen ini dibuat secara otomatis oleh sistem SewaApartemenByLia', pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     // Save PDF
-    doc.save(`Laporan_${months[selectedMonth]}_${selectedYear}.pdf`);
+    doc.save(`Slip_Gaji_${months[selectedMonth]}_${selectedYear}.pdf`);
   };
 
   if (loading) {
@@ -498,10 +535,19 @@ const Reports = () => {
                     {/* Expanded Details */}
                     {expandedUnit === item.unitNumber && (
                       <div className="px-4 pb-4 border-t border-gray-100">
-                        <div className="py-3 border-b border-gray-100">
+                        <div className="py-3 border-b border-gray-100 flex items-center justify-between">
                           <p className="text-sm font-semibold text-gray-700">
                             Total: {item.totalBookings} booking • {formatCurrency(item.totalRevenue)}
                           </p>
+                          <button
+                            onClick={() => {
+                              const unit = units.find(u => u.unitNumber === item.unitNumber);
+                              if (unit) handleClearHistory(item.unitNumber, unit.firebaseId);
+                            }}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            Hapus History
+                          </button>
                         </div>
                         <div className="space-y-3 mt-3">
                           {item.bookings

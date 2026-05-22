@@ -29,6 +29,8 @@ try {
 
 // Database references
 export const unitsRef = ref(database, 'units');
+export const employeesRef = ref(database, 'employees');
+export const usersRef = ref(database, 'users');
 
 // Get all units with realtime listener
 export const subscribeToUnits = (callback) => {
@@ -69,6 +71,48 @@ export const deleteUnit = async (firebaseId) => {
 // Set all units (for initial data)
 export const setAllUnits = async (units) => {
   await set(unitsRef, units);
+};
+
+// Employee management
+export const subscribeToEmployees = (callback) => {
+  return onValue(employeesRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const employeesArray = Object.keys(data).map(key => ({
+        ...data[key],
+        id: key
+      }));
+      callback(employeesArray);
+    } else {
+      callback([]);
+    }
+  });
+};
+
+export const addEmployee = async (employee) => {
+  const newEmployeeRef = push(employeesRef);
+  await set(newEmployeeRef, employee);
+  return newEmployeeRef.key;
+};
+
+export const updateEmployee = async (id, updates) => {
+  const employeeRef = ref(database, `employees/${id}`);
+  await update(employeeRef, updates);
+};
+
+export const deleteEmployee = async (id) => {
+  const employeeRef = ref(database, `employees/${id}`);
+  await remove(employeeRef);
+};
+
+// User account management
+export const addUser = async (userData) => {
+  const newUserRef = push(usersRef);
+  await set(newUserRef, {
+    ...userData,
+    createdAt: new Date().toISOString()
+  });
+  return newUserRef.key;
 };
 
 export { database };
