@@ -1,48 +1,70 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faHome, faChartLine, faDollarSign } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faHome, faChartLine, faDollarSign, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import StatCard from '../components/StatCard';
 import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { monitorCheckouts } from '../services/checkoutMonitor';
-import { checkBotStatus } from '../services/whatsappService';
 
 const Dashboard = () => {
-  const { units, loading, checkoutUnit } = useUnits();
+  const { units, loading, checkoutUnit, updateBookingStatus } = useUnits();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
-  const [botConnected, setBotConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showOccupied, setShowOccupied] = useState(true);
+  const [showBooking, setShowBooking] = useState(true);
 
-  // Check bot status on mount
-  useEffect(() => {
-    checkBotStatus().then(connected => {
-      setBotConnected(connected);
-      if (connected) {
-        console.log('✅ WhatsApp Bot terhubung');
-      } else {
-        console.warn('⚠️ WhatsApp Bot tidak terhubung. Jalankan: cd whatsapp-bot-apartemen && node bot-wweb.js');
-      }
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: 'Logout',
+      text: 'Yakin ingin keluar dari aplikasi?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Logout',
+      cancelButtonText: 'Batal'
     });
-  }, []);
 
-  // Monitor checkouts every minute (otomatis kirim ke grup WhatsApp)
+    if (result.isConfirmed) {
+      logout();
+      navigate('/login');
+    }
+  };
+
+  // Update booking status & monitor checkouts on mount and every hour
   useEffect(() => {
-    if (!botConnected || units.length === 0) return;
-
-    // Check immediately
-    monitorCheckouts(units);
-
-    // Check every minute
-    const interval = setInterval(() => {
+    if (units.length === 0) return;
+    
+    updateBookingStatus();
+    
+    // Monitor checkout expired (only for admin)
+    if (user?.role === 'admin') {
       monitorCheckouts(units);
-    }, 60000); // 60 seconds
-
+    }
+    
+    const interval = setInterval(() => {
+      updateBookingStatus();
+      if (user?.role === 'admin') {
+        monitorCheckouts(units);
+      }
+    }, 3600000);
+    
     return () => clearInterval(interval);
-  }, [units, botConnected]);
+  }, [units, updateBookingStatus, user?.role]);
 
   const occupiedUnits = units.filter(u => u.status === 'terisi');
+  const bookingUnits = units.filter(u => u.status === 'booking');
   const emptyUnits = units.filter(u => u.status === 'kosong');
+  
+  // Available units = empty + booking (both can be booked for future dates)
+  const availableUnits = units.filter(u => u.status === 'kosong' || u.status === 'booking');
+  
   const occupancyRate = units.length > 0 
     ? ((occupiedUnits.length / units.length) * 100).toFixed(1) 
     : 0;
@@ -68,6 +90,9 @@ const Dashboard = () => {
 
   // Get recent bookings (occupied units) - show all
   const recentBookings = occupiedUnits;
+  
+  // Get upcoming bookings (booking status) - show all
+  const upcomingBookings = bookingUnits;
 
   // Filter bookings by search query
   const filteredBookings = recentBookings.filter(unit => {
@@ -91,13 +116,36 @@ const Dashboard = () => {
 
   // Checkout function
   const handleCheckout = async (firebaseId) => {
-    if (!confirm('Yakin ingin checkout unit ini?')) return;
+    const result = await Swal.fire({
+      title: 'Checkout Unit',
+      text: 'Yakin ingin checkout unit ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Checkout',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
     
     try {
       await checkoutUnit(firebaseId);
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Unit berhasil di-checkout',
+        icon: 'success',
+        confirmButtonColor: '#3b82f6',
+        timer: 2000
+      });
     } catch (error) {
       console.error('Error checkout:', error);
-      alert('Gagal checkout unit');
+      Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal checkout unit',
+        icon: 'error',
+        confirmButtonColor: '#3b82f6'
+      });
     }
   };
 
@@ -106,7 +154,16 @@ const Dashboard = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white safe-top">
         <div className="px-4 pt-6 pb-8">
-          <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <button
+              onClick={handleLogout}
+              className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+              title="Logout"
+            >
+              <FontAwesomeIcon icon={faSignOutAlt} className="text-xl" />
+            </button>
+          </div>
           <p className="text-primary-100 text-sm">SewaApartemenByLia</p>
         </div>
       </div>
@@ -122,9 +179,9 @@ const Dashboard = () => {
           />
           <StatCard
             icon={faHome}
-            label="Unit Terisi"
+            label="Menginap"
             value={occupiedUnits.length}
-            color="red"
+            color="blue"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -132,13 +189,13 @@ const Dashboard = () => {
             icon={faChartLine}
             label="Occupancy"
             value={`${occupancyRate}%`}
-            color="green"
+            color="blue"
           />
           <StatCard
             icon={faDollarSign}
             label="Revenue"
             value={`Rp ${formatRevenue(totalRevenue)}`}
-            color="purple"
+            color="blue"
           />
         </div>
       </div>
@@ -147,23 +204,49 @@ const Dashboard = () => {
       <div className="px-4 mb-6">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-500 mb-1">Unit Kosong</p>
-              <p className="text-3xl font-bold text-green-600">{emptyUnits.length}</p>
-            </div>
-            <div className="h-12 w-px bg-gray-200"></div>
-            <div className="flex-1 text-right">
-              <p className="text-sm text-gray-500 mb-1">Siap Disewakan</p>
-              <p className="text-3xl font-bold text-primary-600">{emptyUnits.length}</p>
+            <div className="flex-1 text-center">
+              <p className="text-sm text-gray-500 mb-1">Tersedia</p>
+              <p className="text-3xl font-bold text-primary-600">{availableUnits.length}</p>
+              <p className="text-xs text-gray-400 mt-1">unit</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Filter Toggle */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <p className="text-sm font-semibold text-gray-700 mb-3">Tampilkan:</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowOccupied(!showOccupied)}
+              className={`flex-1 py-2 px-4 rounded-xl font-medium text-sm transition-all ${
+                showOccupied
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              {showOccupied ? '✓' : ''} Sedang Menginap ({occupiedUnits.length})
+            </button>
+            <button
+              onClick={() => setShowBooking(!showBooking)}
+              className={`flex-1 py-2 px-4 rounded-xl font-medium text-sm transition-all ${
+                showBooking
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              {showBooking ? '✓' : ''} Booking Mendatang ({bookingUnits.length})
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Bookings */}
-      <div className="px-4 mb-6">
+      {showOccupied && (
+        <div className="px-4 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Unit Terisi Hari Ini</h2>
+          <h2 className="text-lg font-bold text-gray-900">Sedang Menginap</h2>
           <a href="/units" className="text-sm text-primary-600 font-medium">
             Lihat Semua
           </a>
@@ -228,6 +311,89 @@ const Dashboard = () => {
           </div>
         ) : null}
       </div>
+      )}
+
+      {/* Upcoming Bookings */}
+      {showBooking && upcomingBookings.length > 0 && (
+        <div className="px-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Booking Mendatang</h2>
+            <span className="text-sm text-primary-600 font-medium bg-primary-100 px-3 py-1 rounded-full">
+              {upcomingBookings.length} booking
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {upcomingBookings
+              .sort((a, b) => new Date(a.tenant.checkIn) - new Date(b.tenant.checkIn))
+              .map((unit) => (
+              <div key={unit.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-4 py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                        <FontAwesomeIcon icon={faBuilding} className="text-primary-600 text-lg" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900">Unit {unit.unitNumber}</p>
+                        <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full font-medium">
+                          Booking
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleShowDetail(unit)}
+                      className="text-primary-600 text-sm font-medium hover:text-primary-700"
+                    >
+                      Detail
+                    </button>
+                  </div>
+
+                  {unit.tenant && (
+                    <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Nama:</span>
+                        <span className="text-sm font-semibold text-gray-900">{unit.tenant.name || 'Tamu'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Check-in:</span>
+                        <span className="text-sm font-semibold text-primary-700">
+                          {new Date(unit.tenant.checkIn).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      {unit.tenant.price && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Harga:</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            Rp {unit.tenant.price.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Batalkan Button */}
+                  <div className="mt-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleCheckout(unit.firebaseId || unit.id);
+                      }}
+                      className="w-full py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium text-sm transition-colors"
+                    >
+                      Batalkan Booking
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {showDetailModal && selectedUnit && (

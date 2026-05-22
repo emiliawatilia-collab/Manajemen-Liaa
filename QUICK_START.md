@@ -1,112 +1,112 @@
-# ⚡ Quick Start - Deploy PWA dalam 5 Menit
+# 🚀 Quick Start - Test Notifikasi (5 Menit)
 
-## 🎯 Tujuan
-Membuat aplikasi ini bisa diinstall di HP seperti aplikasi native.
+## Step 1: Generate VAPID Key (2 menit)
 
----
+1. Buka: https://console.firebase.google.com
+2. Pilih project: **manajemen-apartemen-bylia**
+3. Klik ⚙️ → **Project Settings** → Tab **Cloud Messaging**
+4. Scroll ke **Web Push certificates**
+5. Klik **"Generate key pair"**
+6. **Copy** VAPID key (format: BHxxx...)
 
-## 📋 Tahap 1: Deploy ke Internet (WAJIB)
+## Step 2: Update Code (1 menit)
 
-PWA hanya jalan di **HTTPS**. Jadi harus deploy dulu ke hosting.
+Edit file: `src/services/notificationService.js`
 
-### Opsi Tercepat: Vercel (Gratis)
-
-#### 1. Install Vercel CLI
-```bash
-npm install -g vercel
+Cari baris 9:
+```javascript
+const VAPID_KEY = 'YOUR_VAPID_KEY_HERE';
 ```
 
-#### 2. Login
-```bash
-vercel login
-```
-Pilih metode login (Email/GitHub)
-
-#### 3. Deploy
-```bash
-vercel
-```
-Jawab semua pertanyaan dengan **Enter** (pakai default)
-
-#### 4. Dapat Link
-Setelah selesai, dapat link seperti:
-```
-https://apartemen-management.vercel.app
+Ganti dengan VAPID key yang di-copy:
+```javascript
+const VAPID_KEY = 'BHxxx...'; // Paste di sini
 ```
 
-**✅ SELESAI! Aplikasi sudah online dengan HTTPS**
+Save file!
 
----
-
-## 📱 Tahap 2: Install di HP
-
-### Android (Chrome):
-1. Buka link di Chrome
-2. Tunggu **popup biru** muncul di bawah
-3. Klik **"Install"**
-4. ✅ Icon muncul di home screen
-
-### iPhone (Safari):
-1. Buka link di **Safari** (bukan Chrome!)
-2. Klik tombol **Share (📤)**
-3. Pilih **"Add to Home Screen"**
-4. Klik **"Add"**
-5. ✅ Icon muncul di home screen
-
----
-
-## 🔄 Update Aplikasi (Setelah Edit Code)
-
-Setiap kali edit code dan mau update:
+## Step 3: Jalankan App (30 detik)
 
 ```bash
-vercel --prod
+npm run dev
 ```
 
-Aplikasi akan auto-update di link yang sama.
+Buka: http://localhost:5173
+
+## Step 4: Test Admin Notification (1 menit)
+
+1. **Login admin:**
+   - Username: `lia210880`
+   - Password: `lia210880`
+
+2. **Allow notification** saat popup muncul
+
+3. **Cek console** (F12):
+   ```
+   ✅ Notification permission granted
+   ✅ FCM Token: BHxxx...
+   ✅ FCM token saved to Firebase
+   ```
+
+4. **Cek Firebase Database:**
+   - Buka: https://console.firebase.google.com
+   - Realtime Database → `users` → `lia210880_bylia_com` → `fcmTokens`
+   - Harus ada token tersimpan! ✅
+
+## Step 5: Test Attendance Notification (1 menit)
+
+1. **Logout** dari admin
+
+2. **Login pegawai:**
+   - Username: `ameliaagustina@bylia.com`
+   - Password: `amel123`
+
+3. Klik menu **Absensi** (bottom nav)
+
+4. Klik **"Absen Masuk"**
+
+5. **Cek Firebase Database:**
+   - Realtime Database → `notifications`
+   - Harus ada entry baru dengan message:
+   ```json
+   {
+     "title": "✅ Absensi Pegawai",
+     "body": "Amelia Agustina berhasil check-in - 09:15"
+   }
+   ```
+
+## ✅ Selesai!
+
+Jika semua step berhasil:
+- ✅ Admin bisa terima notification permission
+- ✅ FCM token tersimpan di Firebase
+- ✅ Attendance notification masuk ke queue
+
+## 🧪 Test Lanjutan
+
+Lihat file: **TESTING_GUIDE.md** untuk:
+- Test checkout expired notification
+- Test check-out notification
+- Test foreground notification
+- Troubleshooting
+
+## 🐛 Troubleshooting Cepat
+
+**Popup notification tidak muncul?**
+- Cek VAPID key sudah benar
+- Cek browser = Chrome/Firefox/Edge (bukan Safari)
+- Clear cache & reload
+
+**Token tidak tersimpan?**
+- Cek Firebase config di `firebase.js`
+- Cek internet connection
+- Cek console untuk error
+
+**Notification tidak masuk queue?**
+- Cek console log
+- Cek Firebase Database rules
+- Refresh halaman
 
 ---
 
-## 🎉 Selesai!
-
-Aplikasi Anda sekarang:
-- ✅ Bisa diinstall di HP
-- ✅ Buka tanpa browser
-- ✅ Terasa seperti aplikasi native
-- ✅ Icon di home screen
-- ✅ Bisa offline
-
----
-
-## 🆘 Troubleshooting
-
-### Popup Install Tidak Muncul?
-- Pastikan buka di **HTTPS** (link dari Vercel)
-- Refresh halaman (pull down)
-- Coba buka di **Incognito mode**
-
-### Error saat Deploy?
-```bash
-# Cek apakah build jalan di local
-npm run build
-
-# Kalau error, fix dulu, baru deploy lagi
-vercel
-```
-
-### Aplikasi Tidak Update?
-- Tutup aplikasi sepenuhnya
-- Buka lagi
-- Atau uninstall dan install ulang
-
----
-
-## 📞 Need Help?
-
-Baca dokumentasi lengkap:
-- `DEPLOY_GUIDE.md` - Panduan deploy detail
-- `INSTALL_PWA.md` - Panduan install di berbagai device
-
----
-
-**Total waktu: 5 menit** ⚡
+**Butuh bantuan?** Lihat: `TESTING_GUIDE.md` atau `NOTIFICATION_SETUP.md`

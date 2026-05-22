@@ -7,7 +7,7 @@ import { useUnits } from '../hooks/useUnits';
 const Units = () => {
   const { units, loading, createUnit, removeUnit } = useUnits();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // all, terisi, kosong
+  const [filterStatus, setFilterStatus] = useState('all'); // all, terisi, booking, kosong
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUnitNumber, setNewUnitNumber] = useState('');
   
@@ -99,36 +99,46 @@ const Units = () => {
       {/* Filter Tabs */}
       <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
         <div className="px-4 py-3">
-          <div className="flex gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              className={`py-2 px-3 rounded-lg font-medium text-xs transition-colors ${
                 filterStatus === 'all'
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              Semua ({units.length})
+              Semua<br/>({units.length})
             </button>
             <button
               onClick={() => setFilterStatus('terisi')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              className={`py-2 px-3 rounded-lg font-medium text-xs transition-colors ${
                 filterStatus === 'terisi'
-                  ? 'bg-red-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              Terisi ({units.filter(u => u.status === 'terisi').length})
+              Terisi<br/>({units.filter(u => u.status === 'terisi').length})
+            </button>
+            <button
+              onClick={() => setFilterStatus('booking')}
+              className={`py-2 px-3 rounded-lg font-medium text-xs transition-colors ${
+                filterStatus === 'booking'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Booking<br/>({units.filter(u => u.status === 'booking').length})
             </button>
             <button
               onClick={() => setFilterStatus('kosong')}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              className={`py-2 px-3 rounded-lg font-medium text-xs transition-colors ${
                 filterStatus === 'kosong'
-                  ? 'bg-green-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              Kosong ({units.filter(u => u.status === 'kosong').length})
+              Kosong<br/>({units.filter(u => u.status === 'kosong').length})
             </button>
           </div>
         </div>

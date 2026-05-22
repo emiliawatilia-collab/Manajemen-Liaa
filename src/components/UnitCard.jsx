@@ -5,30 +5,39 @@ import CountdownTimer from './CountdownTimer';
 
 const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
   const isOccupied = unit.status === 'terisi';
+  const isBooking = unit.status === 'booking';
 
   return (
     <Link to={`/units/${unit.firebaseId || unit.id}`}>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
         {/* Header */}
-        <div className={`px-4 py-3 ${isOccupied ? 'bg-red-50' : 'bg-green-50'}`}>
+        <div className={`px-4 py-3 ${
+          isBooking ? 'bg-blue-50' : isOccupied ? 'bg-blue-100' : 'bg-gray-50'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-lg" style={{ color: isOccupied ? '#dc2626' : '#16a34a' }} />
+              <FontAwesomeIcon 
+                icon={faMapMarkerAlt} 
+                className="text-lg" 
+                style={{ color: isBooking ? '#3b82f6' : isOccupied ? '#2563eb' : '#6b7280' }} 
+              />
               <span className="font-bold text-lg text-gray-900">Unit {unit.unitNumber}</span>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              isOccupied 
-                ? 'bg-red-100 text-red-700' 
-                : 'bg-green-100 text-green-700'
+              isBooking
+                ? 'bg-blue-100 text-blue-700'
+                : isOccupied 
+                ? 'bg-blue-200 text-blue-800' 
+                : 'bg-gray-100 text-gray-700'
             }`}>
-              {isOccupied ? 'Terisi' : 'Kosong'}
+              {isBooking ? 'Booking' : isOccupied ? 'Terisi' : 'Kosong'}
             </span>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-4">
-          {isOccupied && unit.tenant ? (
+          {(isOccupied || isBooking) && unit.tenant ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-gray-700">
                 <FontAwesomeIcon icon={faUser} className="text-gray-400" />
@@ -53,13 +62,28 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                 </span>
               </div>
 
-              {/* Countdown Timer for Transit Bookings */}
-              <CountdownTimer 
-                checkIn={unit.tenant.checkIn}
-                checkInTime={unit.tenant.checkInTime}
-                checkOut={unit.tenant.checkOut}
-                checkOutTime={unit.tenant.checkOutTime}
-              />
+              {/* Show "Belum Check-in" for booking status */}
+              {isBooking && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                  <p className="text-xs text-blue-700 font-medium">
+                    📅 Belum check-in • Check-in: {new Date(unit.tenant.checkIn).toLocaleDateString('id-ID', { 
+                      day: 'numeric', 
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              )}
+
+              {/* Countdown Timer for Transit Bookings (only for occupied) */}
+              {isOccupied && (
+                <CountdownTimer 
+                  checkIn={unit.tenant.checkIn}
+                  checkInTime={unit.tenant.checkInTime}
+                  checkOut={unit.tenant.checkOut}
+                  checkOutTime={unit.tenant.checkOutTime}
+                />
+              )}
 
               {unit.tenant.phone && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -95,7 +119,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
 
         {/* Footer */}
         <div className="px-4 pb-4">
-          {isOccupied ? (
+          {(isOccupied || isBooking) ? (
             <div className="space-y-2">
               {onShowDetail && (
                 <button 
@@ -115,9 +139,13 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                       e.preventDefault();
                       onCheckout(unit.firebaseId || unit.id);
                     }}
-                    className="py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium text-sm transition-colors"
+                    className={`py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                      isBooking 
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : 'bg-primary-600 hover:bg-primary-700 text-white'
+                    }`}
                   >
-                    Check-out
+                    {isBooking ? 'Batalkan' : 'Check-out'}
                   </button>
                 )}
                 {onDelete && (
@@ -153,7 +181,7 @@ const UnitCard = ({ unit, onCheckout, onDelete, onShowDetail }) => {
                     e.preventDefault();
                     onDelete(unit.firebaseId || unit.id);
                   }}
-                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium text-sm transition-colors"
+                  className="w-full py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium text-sm transition-colors"
                 >
                   Hapus Unit
                 </button>

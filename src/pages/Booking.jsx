@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCamera, faCheckCircle, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faCamera, faImage } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
+import Swal from 'sweetalert2';
 
 const Booking = () => {
   const { units, bookUnit } = useUnits();
-  const emptyUnits = units.filter(u => u.status === 'kosong');
   const [formData, setFormData] = useState({
     unitId: '',
     tenantName: '',
@@ -18,7 +18,6 @@ const Booking = () => {
     price: '',
     ktpImage: null,
   });
-  const [showSuccess, setShowSuccess] = useState(false);
   const [priceDisplay, setPriceDisplay] = useState(''); // For formatted display
 
   // Format number with thousand separator
@@ -55,10 +54,44 @@ const Booking = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Get selected unit
+    const selectedUnit = units.find(u => (u.firebaseId || u.id).toString() === formData.unitId);
+    if (!selectedUnit) return;
+    
+    // Check if unit has booking/occupied and dates conflict
+    if ((selectedUnit.status === 'booking' || selectedUnit.status === 'terisi') && selectedUnit.tenant) {
+      const checkInDate = new Date(formData.checkIn);
+      const currentCheckOut = new Date(selectedUnit.tenant.checkOut);
+      checkInDate.setHours(0, 0, 0, 0);
+      currentCheckOut.setHours(0, 0, 0, 0);
+      
+      if (checkInDate <= currentCheckOut) {
+        const confirmReplace = await Swal.fire({
+          title: 'Unit Sudah Terisi',
+          html: `Unit ${selectedUnit.unitNumber} sudah terisi/booking sampai:<br/>
+                 <strong>${new Date(selectedUnit.tenant.checkOut).toLocaleDateString('id-ID')}</strong><br/><br/>
+                 Pilih tanggal check-in setelah tanggal tersebut, atau batalkan booking ini.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3b82f6',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Batalkan & Book Sekarang',
+          cancelButtonText: 'Batal'
+        });
+        
+        if (!confirmReplace.isConfirmed) return;
+      }
+    }
+    
     // Validation
     if (formData.rentalType === 'transit') {
       if (!formData.checkInTime || !formData.checkOutTime) {
-        alert('Untuk booking transit, jam check-in dan check-out harus diisi!');
+        await Swal.fire({
+          title: 'Data Tidak Lengkap',
+          text: 'Untuk booking transit, jam check-in dan check-out harus diisi!',
+          icon: 'error',
+          confirmButtonColor: '#3b82f6'
+        });
         return;
       }
       // For transit, checkout date is same as checkin date
@@ -68,14 +101,15 @@ const Booking = () => {
     } else {
       // For daily rental, checkout date is required
       if (!formData.checkOut) {
-        alert('Tanggal check-out harus diisi!');
+        await Swal.fire({
+          title: 'Data Tidak Lengkap',
+          text: 'Tanggal check-out harus diisi!',
+          icon: 'error',
+          confirmButtonColor: '#3b82f6'
+        });
         return;
       }
     }
-    
-    // Get selected unit
-    const selectedUnit = emptyUnits.find(u => (u.firebaseId || u.id).toString() === formData.unitId);
-    if (!selectedUnit) return;
     
     const tenantData = {
       name: formData.tenantName,
@@ -92,27 +126,36 @@ const Booking = () => {
     try {
       await bookUnit(selectedUnit.firebaseId || selectedUnit.id, tenantData);
       
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        // Reset form
-        setFormData({
-          unitId: '',
-          tenantName: '',
-          phone: '',
-          rentalType: 'harian',
-          checkIn: new Date().toISOString().split('T')[0],
-          checkInTime: '',
-          checkOut: '',
-          checkOutTime: '',
-          price: '',
-          ktpImage: null,
-        });
-        setPriceDisplay(''); // Reset price display
-      }, 2000);
+      await Swal.fire({
+        title: 'Berhasil!',
+        text: 'Booking berhasil disimpan',
+        icon: 'success',
+        confirmButtonColor: '#3b82f6',
+        timer: 2000
+      });
+      
+      // Reset form
+      setFormData({
+        unitId: '',
+        tenantName: '',
+        phone: '',
+        rentalType: 'harian',
+        checkIn: new Date().toISOString().split('T')[0],
+        checkInTime: '',
+        checkOut: '',
+        checkOutTime: '',
+        price: '',
+        ktpImage: null,
+      });
+      setPriceDisplay('');
     } catch (error) {
       console.error('Error booking unit:', error);
-      alert('Gagal menyimpan booking');
+      await Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal menyimpan booking',
+        icon: 'error',
+        confirmButtonColor: '#3b82f6'
+      });
     }
   };
 
@@ -140,10 +183,13 @@ const Booking = () => {
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             >
-              <option value="">-- Pilih Unit Kosong --</option>
-              {emptyUnits.map((unit) => (
+              <option value="">-- Pilih Unit --</option>
+              {units
+                .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber))
+                .map((unit) => (
                 <option key={unit.firebaseId || unit.id} value={unit.firebaseId || unit.id}>
                   Unit {unit.unitNumber}
+                  {unit.status !== 'kosong' && ` (${unit.status === 'terisi' ? 'Terisi' : 'Booking'})`}
                 </option>
               ))}
             </select>
@@ -218,12 +264,6 @@ const Booking = () => {
             {/* Harian Mode */}
             {formData.rentalType === 'harian' && (
               <>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                  <p className="text-xs text-blue-700">
-                    <strong>Sewa Harian:</strong> Pilih tanggal check-in dan check-out (minimal 1 hari)
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -257,12 +297,6 @@ const Booking = () => {
             {/* Transit Mode */}
             {formData.rentalType === 'transit' && (
               <>
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
-                  <p className="text-xs text-orange-700">
-                    <strong>Sewa Transit:</strong> Untuk sewa per jam (contoh: 18.00 - 19.00)
-                  </p>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tanggal
@@ -384,19 +418,6 @@ const Booking = () => {
           </button>
         </form>
       </div>
-
-      {/* Success Modal */}
-      {showSuccess && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center animate-scale-in">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FontAwesomeIcon icon={faCheckCircle} className="text-4xl text-green-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Booking Berhasil!</h3>
-            <p className="text-gray-600">Data penyewa telah disimpan</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

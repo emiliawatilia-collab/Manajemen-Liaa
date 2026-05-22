@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, onValue, push, remove, update } from 'firebase/database';
+import { getMessaging } from 'firebase/messaging';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -15,6 +16,16 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+
+// Initialize Firebase Cloud Messaging (optional, hanya jika browser support)
+let messaging = null;
+try {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    messaging = getMessaging(app);
+  }
+} catch (error) {
+  console.warn('Firebase Messaging not supported:', error);
+}
 
 // Database references
 export const unitsRef = ref(database, 'units');
@@ -61,3 +72,4 @@ export const setAllUnits = async (units) => {
 };
 
 export { database };
+export { database as db, app, messaging };

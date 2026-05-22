@@ -10,6 +10,7 @@ import {
   faFileExport
 } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
+import jsPDF from 'jspdf';
 
 const Reports = () => {
   const { units, loading } = useUnits();
@@ -27,38 +28,96 @@ const Reports = () => {
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear - 1, currentYear - 2];
 
-  // Get all bookings from history
+  // Get all bookings from history (including all past bookings)
   const getAllBookings = () => {
     const bookings = [];
+    const seenBookings = new Set(); // Track unique bookings
     
     units.forEach(unit => {
       // Current tenant
       if (unit.tenant) {
-        bookings.push({
-          ...unit.tenant,
-          unitNumber: unit.unitNumber,
-          unitId: unit.id,
-          firebaseId: unit.firebaseId,
-          isCurrent: unit.status === 'terisi'
-        });
+        const bookingKey = `${unit.unitNumber}-${unit.tenant.name}-${unit.tenant.checkIn}-${unit.tenant.checkOut}`;
+        if (!seenBookings.has(bookingKey)) {
+          bookings.push({
+            ...unit.tenant,
+            unitNumber: unit.unitNumber,
+            unitId: unit.id,
+            firebaseId: unit.firebaseId,
+            isCurrent: unit.status === 'terisi'
+          });
+          seenBookings.add(bookingKey);
+        }
       }
       
       // History
       if (unit.history && unit.history.length > 0) {
         unit.history.forEach(hist => {
-          bookings.push({
-            ...hist,
-            unitNumber: unit.unitNumber,
-            unitId: unit.id,
-            firebaseId: unit.firebaseId,
-            isCurrent: false
-          });
+          const bookingKey = `${unit.unitNumber}-${hist.name}-${hist.checkIn}-${hist.checkOut}`;
+          if (!seenBookings.has(bookingKey)) {
+            bookings.push({
+              ...hist,
+              unitNumber: unit.unitNumber,
+              unitId: unit.id,
+              firebaseId: unit.firebaseId,
+              isCurrent: false
+            });
+            seenBookings.add(bookingKey);
+          }
         });
       }
     });
     
+    console.log('Total bookings found:', bookings.length);
     return bookings;
   };
+
+  // Get ALL units with their booking history (not filtered by month)
+  const getAllUnitsWithHistory = () => {
+    const allBookings = getAllBookings();
+    
+    // Group all bookings by unit
+    const bookingsByUnit = {};
+    
+    // Initialize all units (even those without bookings)
+    units.forEach(unit => {
+      bookingsByUnit[unit.unitNumber] = {
+        unitNumber: unit.unitNumber,
+        bookings: [],
+        totalRevenue: 0,
+        totalBookings: 0
+      };
+    });
+    
+    // Add bookings to their respective units
+    allBookings.forEach(booking => {
+      const unitNumber = booking.unitNumber;
+      if (bookingsByUnit[unitNumber]) {
+        // Check if this booking already exists (avoid duplicates)
+        const isDuplicate = bookingsByUnit[unitNumber].bookings.some(b => 
+          b.name === booking.name && 
+          b.checkIn === booking.checkIn && 
+          b.checkOut === booking.checkOut
+        );
+        
+        if (!isDuplicate) {
+          bookingsByUnit[unitNumber].bookings.push(booking);
+          bookingsByUnit[unitNumber].totalRevenue += (booking.price || 0);
+          bookingsByUnit[unitNumber].totalBookings += 1;
+        }
+      }
+    });
+    
+    // Convert to array and sort by total revenue (highest first)
+    return Object.values(bookingsByUnit).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  };
+
+  const allUnitsWithHistory = getAllUnitsWithHistory();
+  
+  // Debug: Log untuk melihat data
+  useEffect(() => {
+    console.log('All units with history:', allUnitsWithHistory);
+    console.log('Total units:', units.length);
+  }, [allUnitsWithHistory, units]);
 
   // Filter bookings by month and year
   const getMonthlyBookings = () => {
@@ -79,6 +138,51 @@ const Reports = () => {
   };
 
   const monthlyBookings = getMonthlyBookings();
+
+  // Get units for selected month (including units without bookings)
+  const getUnitsForSelectedMonth = () => {
+    // Group monthly bookings by unit
+    const bookingsByUnit = {};
+    
+    // Initialize ALL units first
+    units.forEach(unit => {
+      bookingsByUnit[unit.unitNumber] = {
+        unitNumber: unit.unitNumber,
+        bookings: [],
+        totalRevenue: 0,
+        totalBookings: 0
+      };
+    });
+    
+    // Add bookings for this month
+    monthlyBookings.forEach(booking => {
+      const unitNumber = booking.unitNumber;
+      if (bookingsByUnit[unitNumber]) {
+        // Check if this booking already exists (avoid duplicates)
+        const isDuplicate = bookingsByUnit[unitNumber].bookings.some(b => 
+          b.name === booking.name && 
+          b.checkIn === booking.checkIn && 
+          b.checkOut === booking.checkOut
+        );
+        
+        if (!isDuplicate) {
+          bookingsByUnit[unitNumber].bookings.push(booking);
+          bookingsByUnit[unitNumber].totalRevenue += (booking.price || 0);
+          bookingsByUnit[unitNumber].totalBookings += 1;
+        }
+      }
+    });
+    
+    // Convert to array and sort: units with bookings first (by revenue), then units without bookings (by unit number)
+    return Object.values(bookingsByUnit).sort((a, b) => {
+      if (a.totalBookings > 0 && b.totalBookings === 0) return -1;
+      if (a.totalBookings === 0 && b.totalBookings > 0) return 1;
+      if (a.totalBookings > 0 && b.totalBookings > 0) return b.totalRevenue - a.totalRevenue;
+      return parseInt(a.unitNumber) - parseInt(b.unitNumber);
+    });
+  };
+
+  const unitsForSelectedMonth = getUnitsForSelectedMonth();
 
   // Calculate statistics
   const totalRevenue = monthlyBookings.reduce((sum, booking) => {
@@ -129,45 +233,123 @@ const Reports = () => {
     }
   };
 
-  // Export to text
+  // Export to PDF
   const exportReport = () => {
-    let report = `LAPORAN PENDAPATAN\n`;
-    report += `Periode: ${months[selectedMonth]} ${selectedYear}\n`;
-    report += `Tanggal Export: ${new Date().toLocaleDateString('id-ID')}\n`;
-    report += `\n${'='.repeat(50)}\n\n`;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 20;
     
-    report += `RINGKASAN:\n`;
-    report += `- Total Pendapatan: ${formatCurrency(totalRevenue)}\n`;
-    report += `- Total Booking: ${totalBookings}\n`;
-    report += `- Unit Aktif: ${uniqueUnits}\n`;
-    report += `\n${'='.repeat(50)}\n\n`;
+    // Header
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('LAPORAN PENDAPATAN', pageWidth / 2, yPos, { align: 'center' });
     
-    report += `DETAIL PER UNIT:\n\n`;
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text('SewaApartemenByLia', pageWidth / 2, yPos, { align: 'center' });
     
-    revenueByUnit.forEach((item, index) => {
-      report += `${index + 1}. Unit ${item.unitNumber}\n`;
-      report += `   Booking: ${item.bookings}x\n`;
-      report += `   Revenue: ${formatCurrency(item.revenue)}\n`;
+    yPos += 8;
+    doc.setFontSize(10);
+    doc.text(`Periode: ${months[selectedMonth]} ${selectedYear}`, pageWidth / 2, yPos, { align: 'center' });
+    
+    yPos += 6;
+    doc.text(`Tanggal Export: ${new Date().toLocaleDateString('id-ID')}`, pageWidth / 2, yPos, { align: 'center' });
+    
+    // Line separator
+    yPos += 8;
+    doc.setLineWidth(0.5);
+    doc.line(15, yPos, pageWidth - 15, yPos);
+    
+    // Summary
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('RINGKASAN', 15, yPos);
+    
+    yPos += 8;
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Total Pendapatan: ${formatCurrency(totalRevenue)}`, 20, yPos);
+    
+    yPos += 6;
+    doc.text(`Total Booking: ${totalBookings}`, 20, yPos);
+    
+    yPos += 6;
+    doc.text(`Unit Aktif: ${uniqueUnits}`, 20, yPos);
+    
+    // Line separator
+    yPos += 8;
+    doc.line(15, yPos, pageWidth - 15, yPos);
+    
+    // Detail per unit
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('DETAIL PER UNIT', 15, yPos);
+    
+    yPos += 8;
+    
+    unitsForSelectedMonth.forEach((item, index) => {
+      // Check if need new page
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
       
-      const unitBookings = bookingsByUnit[item.unitNumber];
-      unitBookings.forEach((booking, idx) => {
-        report += `   ${idx + 1}) ${booking.name || 'Tamu'}\n`;
-        report += `      ${new Date(booking.checkIn).toLocaleDateString('id-ID')} - ${new Date(booking.checkOut).toLocaleDateString('id-ID')}\n`;
-        report += `      ${formatCurrency(booking.price || 0)}\n`;
-      });
-      report += `\n`;
+      // Unit header
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. Unit ${item.unitNumber}`, 15, yPos);
+      
+      yPos += 6;
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      
+      if (item.totalBookings > 0) {
+        doc.text(`Total: ${item.totalBookings} booking | ${formatCurrency(item.totalRevenue)}`, 20, yPos);
+        yPos += 6;
+        
+        // Bookings detail
+        item.bookings
+          .sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn))
+          .forEach((booking, idx) => {
+            // Check if need new page
+            if (yPos > pageHeight - 30) {
+              doc.addPage();
+              yPos = 20;
+            }
+            
+            doc.setFontSize(9);
+            doc.text(`   ${idx + 1}) ${booking.name || 'Tamu'}`, 20, yPos);
+            
+            yPos += 5;
+            doc.setFontSize(8);
+            doc.text(`      ${new Date(booking.checkIn).toLocaleDateString('id-ID')} - ${new Date(booking.checkOut).toLocaleDateString('id-ID')}`, 20, yPos);
+            
+            yPos += 5;
+            doc.text(`      ${formatCurrency(booking.price || 0)} | ${booking.isCurrent ? 'Sedang Menginap' : 'Selesai'}`, 20, yPos);
+            
+            yPos += 6;
+          });
+      } else {
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Tidak ada booking di ${months[selectedMonth]}`, 20, yPos);
+        doc.setTextColor(0, 0, 0);
+        yPos += 6;
+      }
+      
+      yPos += 4;
     });
     
-    // Download as text file
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Laporan_${months[selectedMonth]}_${selectedYear}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Footer on last page
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Dokumen ini dibuat secara otomatis oleh sistem SewaApartemenByLia', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    
+    // Save PDF
+    doc.save(`Laporan_${months[selectedMonth]}_${selectedYear}.pdf`);
   };
 
   if (loading) {
@@ -278,67 +460,94 @@ const Reports = () => {
 
       {/* Revenue by Unit */}
       <div className="px-4 mb-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Pendapatan per Unit</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
+          Semua Unit - {months[selectedMonth]} {selectedYear}
+        </h2>
         
-        {revenueByUnit.length > 0 ? (
+        {unitsForSelectedMonth.length > 0 ? (
           <div className="space-y-3">
-            {revenueByUnit.map((item) => (
+            {unitsForSelectedMonth.map((item) => (
               <div key={item.unitNumber} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <button
-                  onClick={() => setExpandedUnit(expandedUnit === item.unitNumber ? null : item.unitNumber)}
-                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
-                      <FontAwesomeIcon icon={faBuilding} className="text-primary-600 text-lg" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900">Unit {item.unitNumber}</p>
-                      <p className="text-sm text-gray-500">{item.bookings} booking</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">{formatShortCurrency(item.revenue)}</p>
-                    </div>
-                    <FontAwesomeIcon 
-                      icon={expandedUnit === item.unitNumber ? faChevronUp : faChevronDown} 
-                      className="text-gray-400"
-                    />
-                  </div>
-                </button>
-
-                {/* Expanded Details */}
-                {expandedUnit === item.unitNumber && (
-                  <div className="px-4 pb-4 border-t border-gray-100">
-                    <div className="space-y-3 mt-3">
-                      {bookingsByUnit[item.unitNumber].map((booking, index) => (
-                        <div key={index} className="bg-gray-50 rounded-xl p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-gray-900">{booking.name || 'Tamu'}</p>
-                              <p className="text-xs text-gray-500">{booking.phone || '-'}</p>
-                            </div>
-                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                              booking.isCurrent 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-200 text-gray-700'
-                            }`}>
-                              {booking.isCurrent ? 'Aktif' : 'Selesai'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">
-                              {new Date(booking.checkIn).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                              {' - '}
-                              {new Date(booking.checkOut).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                            </span>
-                            <span className="font-bold text-green-600">
-                              {formatCurrency(booking.price || 0)}
-                            </span>
-                          </div>
+                {item.totalBookings > 0 ? (
+                  // Unit with bookings - clickable
+                  <>
+                    <button
+                      onClick={() => setExpandedUnit(expandedUnit === item.unitNumber ? null : item.unitNumber)}
+                      className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                          <FontAwesomeIcon icon={faBuilding} className="text-primary-600 text-lg" />
                         </div>
-                      ))}
+                        <div className="text-left">
+                          <p className="font-bold text-gray-900">Unit {item.unitNumber}</p>
+                          <p className="text-sm text-gray-500">{item.totalBookings} booking</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">{formatShortCurrency(item.totalRevenue)}</p>
+                        </div>
+                        <FontAwesomeIcon 
+                          icon={expandedUnit === item.unitNumber ? faChevronUp : faChevronDown} 
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </button>
+
+                    {/* Expanded Details */}
+                    {expandedUnit === item.unitNumber && (
+                      <div className="px-4 pb-4 border-t border-gray-100">
+                        <div className="py-3 border-b border-gray-100">
+                          <p className="text-sm font-semibold text-gray-700">
+                            Total: {item.totalBookings} booking • {formatCurrency(item.totalRevenue)}
+                          </p>
+                        </div>
+                        <div className="space-y-3 mt-3">
+                          {item.bookings
+                            .sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn))
+                            .map((booking, index) => (
+                            <div key={index} className="bg-gray-50 rounded-xl p-3">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{booking.name || 'Tamu'}</p>
+                                  <p className="text-xs text-gray-500">{booking.phone || '-'}</p>
+                                </div>
+                                <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                  booking.isCurrent 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-gray-200 text-gray-700'
+                                }`}>
+                                  {booking.isCurrent ? 'Sedang Menginap' : 'Selesai'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">
+                                  {new Date(booking.checkIn).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  {' - '}
+                                  {new Date(booking.checkOut).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                                <span className="font-bold text-green-600">
+                                  {formatCurrency(booking.price || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Unit without bookings - not clickable
+                  <div className="px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <FontAwesomeIcon icon={faBuilding} className="text-gray-400 text-lg" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900">Unit {item.unitNumber}</p>
+                        <p className="text-sm text-gray-500">Tidak ada booking di {months[selectedMonth]}</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -348,7 +557,7 @@ const Reports = () => {
         ) : (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
             <FontAwesomeIcon icon={faChartLine} className="text-5xl text-gray-300 mb-3" />
-            <p className="text-gray-500">Tidak ada data untuk periode ini</p>
+            <p className="text-gray-500">Tidak ada data unit</p>
           </div>
         )}
       </div>

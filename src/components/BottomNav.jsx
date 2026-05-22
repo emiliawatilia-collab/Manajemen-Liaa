@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faBuilding, faCalendarDays, faChartLine, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faBuilding, faCalendarDays, faChartLine, faCirclePlus, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 
 const BottomNav = () => {
   const location = useLocation();
@@ -11,11 +11,12 @@ const BottomNav = () => {
     { path: '/calendar', icon: faCalendarDays, label: 'Kalender' },
     { path: '/reports', icon: faChartLine, label: 'Laporan' },
     { path: '/booking', icon: faCirclePlus, label: 'Booking' },
+    { path: '/admin-attendance', icon: faUserCheck, label: 'Absensi' },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-bottom z-50">
-      <div className="max-w-lg mx-auto px-4">
+      <div className="max-w-lg mx-auto px-2">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -32,9 +33,9 @@ const BottomNav = () => {
               >
                 <FontAwesomeIcon 
                   icon={item.icon} 
-                  className={`text-2xl ${isActive ? 'text-primary-600' : 'text-gray-500'}`}
+                  className={`text-xl ${isActive ? 'text-primary-600' : 'text-gray-500'}`}
                 />
-                <span className={`text-xs mt-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                <span className={`text-[10px] mt-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
                   {item.label}
                 </span>
               </Link>

@@ -1,5 +1,5 @@
 {
-  "name": "Manajemen Apartemen",
+  "name": "Manajemen Apartemen ByLia",
   "short_name": "Apartemen",
   "description": "Aplikasi manajemen apartemen mobile-first untuk monitoring unit dan booking penyewa",
   "start_url": "/",
@@ -22,5 +22,6 @@
       "purpose": "any"
     }
   ],
-  "categories": ["business", "productivity"]
+  "categories": ["business", "productivity"],
+  "gcm_sender_id": "103953800507"
 }

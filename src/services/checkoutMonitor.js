@@ -1,71 +1,68 @@
-import { sendCheckoutReminder } from './whatsappService';
+// Checkout Monitor Service
+// Monitor unit checkout expired dan kirim notifikasi ke admin
+
+import { sendCheckoutExpiredNotification } from './notificationService';
 
 // Track units yang sudah dikirim notifikasi (agar tidak spam)
-const notifiedUnits = new Set();
+const notifiedUnits = new Map();
 
-export const checkCheckoutExpired = (unit) => {
-  if (!unit.tenant || unit.status !== 'terisi') {
-    return false;
-  }
-
+// Monitor checkout expired units
+export const monitorCheckouts = async (units) => {
   const now = new Date();
   
-  // Create check-in datetime
-  const checkInDate = new Date(unit.tenant.checkIn);
-  if (unit.tenant.checkInTime) {
-    const [inHour, inMinute] = unit.tenant.checkInTime.split(':');
-    checkInDate.setHours(parseInt(inHour), parseInt(inMinute), 0, 0);
-  } else {
-    checkInDate.setHours(0, 0, 0, 0);
-  }
+  // Filter unit yang terisi dan checkout sudah lewat
+  const expiredUnits = units.filter(unit => {
+    if (unit.status !== 'terisi' || !unit.tenant) return false;
+    
+    const checkOutDate = new Date(unit.tenant.checkOut);
+    const checkOutTime = unit.tenant.checkOutTime || '12:00';
+    const [hours, minutes] = checkOutTime.split(':');
+    
+    checkOutDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    // Cek apakah checkout sudah lewat
+    return now > checkOutDate;
+  });
   
-  // Create checkout datetime
-  const checkOutDate = new Date(unit.tenant.checkOut);
-  if (unit.tenant.checkOutTime) {
-    const [outHour, outMinute] = unit.tenant.checkOutTime.split(':');
-    checkOutDate.setHours(parseInt(outHour), parseInt(outMinute), 0, 0);
-  } else {
-    // Default checkout time is 12:00 noon for daily bookings
-    checkOutDate.setHours(12, 0, 0, 0);
-  }
-  
-  // Check if booking is active and expired
-  const isActive = now >= checkInDate;
-  const isExpired = now > checkOutDate;
-  
-  return isActive && isExpired;
-};
-
-export const monitorCheckouts = async (units) => {
-  for (const unit of units) {
-    if (checkCheckoutExpired(unit)) {
-      // Buat unique key untuk unit ini (firebaseId + checkout date)
-      const unitKey = `${unit.firebaseId}_${unit.tenant?.checkOut}`;
+  // Kirim notifikasi untuk unit yang expired
+  for (const unit of expiredUnits) {
+    const unitKey = `${unit.firebaseId}_${unit.tenant.checkOut}`;
+    
+    // Cek apakah sudah pernah kirim notifikasi untuk unit ini
+    if (!notifiedUnits.has(unitKey)) {
+      console.log('Unit ' + unit.unitNumber + ' checkout expired, mengirim notifikasi...');
       
-      // Cek apakah sudah pernah dikirim notifikasi
-      if (!notifiedUnits.has(unitKey)) {
-        console.log(`⏰ Unit ${unit.unitNumber} checkout expired, mengirim notifikasi...`);
+      try {
+        await sendCheckoutExpiredNotification(unit);
         
-        const sent = await sendCheckoutReminder(unit);
+        // Tandai sudah kirim notifikasi
+        notifiedUnits.set(unitKey, {
+          sentAt: new Date().toISOString(),
+          unitNumber: unit.unitNumber
+        });
         
-        if (sent) {
-          // Tandai sudah dikirim
-          notifiedUnits.add(unitKey);
-          console.log(`✅ Notifikasi terkirim untuk unit ${unit.unitNumber}`);
-        }
+        console.log('Notifikasi terkirim untuk unit ' + unit.unitNumber);
+      } catch (error) {
+        console.error('Gagal kirim notifikasi untuk unit ' + unit.unitNumber + ':', error);
       }
+    }
+  }
+  
+  // Cleanup: hapus notifikasi lama (lebih dari 7 hari)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  for (const [key, value] of notifiedUnits.entries()) {
+    const sentAt = new Date(value.sentAt);
+    if (sentAt < sevenDaysAgo) {
+      notifiedUnits.delete(key);
     }
   }
 };
 
-// Clear notification flag untuk unit tertentu (dipanggil saat checkout)
+// Clear notification flag (dipanggil saat checkout unit)
 export const clearNotificationFlag = (firebaseId, checkOutDate) => {
   const unitKey = `${firebaseId}_${checkOutDate}`;
   notifiedUnits.delete(unitKey);
-};
-
-// Clear all notification flags (untuk testing)
-export const clearAllNotificationFlags = () => {
-  notifiedUnits.clear();
-  console.log('🧹 Semua flag notifikasi dibersihkan');
+  console.log('Cleared notification flag for ' + unitKey);
 };
