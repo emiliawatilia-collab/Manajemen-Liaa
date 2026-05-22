@@ -49,8 +49,6 @@ const AdminAttendance = () => {
     
     // Subscribe to employees
     const unsubscribe = subscribeToEmployees((data) => {
-      console.log('📊 Employees from Firebase:', data);
-      
       // If no employees in Firebase, use default employees
       if (data.length === 0) {
         const defaultEmployees = [
@@ -73,10 +71,8 @@ const AdminAttendance = () => {
             paymentType: 'weekly'
           }
         ];
-        console.log('✅ Using default employees:', defaultEmployees);
         setEmployees(defaultEmployees);
       } else {
-        console.log('✅ Using Firebase employees:', data);
         setEmployees(data);
       }
     });
@@ -295,7 +291,64 @@ const AdminAttendance = () => {
     e.preventDefault();
     
     try {
-      // Add employee to Firebase
+      // Check if this is the first employee being added
+      const isFirstEmployee = employees.length > 0 && employees[0].id?.startsWith('default-');
+      
+      // If first employee, migrate default employees first
+      if (isFirstEmployee) {
+        const defaultEmployees = [
+          {
+            name: 'Amelia Agustina',
+            email: 'ameliaagustina@bylia.com',
+            password: 'amel123',
+            shift: 'Pagi-Sore',
+            shiftStart: '09:00',
+            shiftEnd: '17:00',
+            paymentType: 'monthly'
+          },
+          {
+            name: 'Devano Erhadinata',
+            email: 'devanoerhadinata@bylia.com',
+            password: 'deva123',
+            shift: 'Sore-Malam',
+            shiftStart: '17:00',
+            shiftEnd: '00:00',
+            paymentType: 'weekly'
+          }
+        ];
+        
+        // Add default employees to Firebase first
+        for (const emp of defaultEmployees) {
+          const employeeData = {
+            name: emp.name,
+            email: emp.email,
+            shift: emp.shift,
+            shiftStart: emp.shiftStart,
+            shiftEnd: emp.shiftEnd,
+            paymentType: emp.paymentType,
+            createdAt: new Date().toISOString()
+          };
+          
+          await addEmployee(employeeData);
+          
+          const userData = {
+            username: emp.email,
+            password: emp.password,
+            role: 'pegawai',
+            name: emp.name,
+            shift: {
+              start: emp.shiftStart,
+              end: emp.shiftEnd,
+              name: emp.shift
+            },
+            paymentType: emp.paymentType
+          };
+          
+          await addUser(userData);
+        }
+      }
+      
+      // Add new employee to Firebase
       const employeeData = {
         name: newEmployee.name,
         email: newEmployee.email,
@@ -326,10 +379,12 @@ const AdminAttendance = () => {
       
       Swal.fire({
         title: 'Berhasil!',
-        text: 'Pegawai berhasil ditambahkan',
+        text: isFirstEmployee 
+          ? 'Pegawai berhasil ditambahkan. Amelia & Devano juga sudah disimpan ke Firebase.'
+          : 'Pegawai berhasil ditambahkan',
         icon: 'success',
         confirmButtonColor: '#3b82f6',
-        timer: 2000
+        timer: 3000
       });
       
       // Reset form
@@ -524,16 +579,16 @@ const AdminAttendance = () => {
           Tambah Pegawai Baru
         </button>
 
-        {/* Migrate Button (only show if using default employees) */}
+        {/* Migrate Button - Always show if using default employees */}
         {employees.length > 0 && employees[0].id?.startsWith('default-') && (
           <button
             onClick={handleMigrateEmployees}
-            className="w-full mb-4 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-medium hover:bg-yellow-200 transition-all flex items-center justify-center gap-2 text-sm border border-yellow-300"
+            className="w-full mb-4 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-all flex items-center justify-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Simpan Data Pegawai ke Firebase
+            Simpan Amelia & Devano ke Firebase
           </button>
         )}
 

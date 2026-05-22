@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { requestNotificationPermission, removeFCMToken } from '../services/notificationService';
+import { ref, get } from 'firebase/database';
+import { database } from '../services/firebase';
 
 const AuthContext = createContext();
 
@@ -27,56 +29,31 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (username, password) => {
-    // Hardcoded users (bisa diganti dengan Firebase Auth nanti)
-    const users = {
+    // Hardcoded admin
+    const hardcodedUsers = {
       lia210880: {
         username: 'lia210880',
         password: 'lia210880',
         role: 'admin',
         name: 'Administrator'
-      },
-      'ameliaagustina@bylia.com': {
-        username: 'ameliaagustina@bylia.com',
-        password: 'amel123',
-        role: 'pegawai',
-        name: 'Amelia Agustina',
-        shift: {
-          start: '09:00',
-          end: '17:00',
-          name: 'Pagi-Sore'
-        },
-        paymentType: 'monthly' // monthly or weekly
-      },
-      'devanoerhadinata@bylia.com': {
-        username: 'devanoerhadinata@bylia.com',
-        password: 'deva123',
-        role: 'pegawai',
-        name: 'Devano Erhadinata',
-        shift: {
-          start: '17:00',
-          end: '00:00',
-          name: 'Sore-Malam'
-        },
-        paymentType: 'weekly' // monthly or weekly
       }
     };
 
-    const user = users[username];
-    
-    if (user && user.password === password) {
-      const userData = {
-        username: user.username,
-        role: user.role,
-        name: user.name,
-        shift: user.shift,
-        userId: username.replace(/[@.]/g, '_') // Generate userId dari username
-      };
-      
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      // Request notification permission untuk admin
-      if (user.role === 'admin') {
+    // Check hardcoded admin first
+    if (hardcodedUsers[username]) {
+      const user = hardcodedUsers[username];
+      if (user.password === password) {
+        const userData = {
+          username: user.username,
+          role: user.role,
+          name: user.name,
+          userId: username.replace(/[@.]/g, '_')
+        };
+        
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Request notification permission untuk admin
         try {
           const token = await requestNotificationPermission(userData.userId, user.role);
           if (token) {
@@ -86,9 +63,40 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error('Error requesting notification permission:', error);
         }
+        
+        return { success: true, user: userData };
       }
+    }
+
+    // Check Firebase users (employees)
+    try {
+      const usersRef = ref(database, 'users');
+      const snapshot = await get(usersRef);
       
-      return { success: true, user: userData };
+      if (snapshot.exists()) {
+        const users = snapshot.val();
+        
+        // Find user by username
+        for (const [key, user] of Object.entries(users)) {
+          if (user.username === username && user.password === password) {
+            const userData = {
+              username: user.username,
+              role: user.role,
+              name: user.name,
+              shift: user.shift,
+              paymentType: user.paymentType,
+              userId: username.replace(/[@.]/g, '_')
+            };
+            
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            
+            return { success: true, user: userData };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking Firebase users:', error);
     }
     
     return { success: false, error: 'Username atau password salah' };
