@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faEye, faEyeSlash, faCamera } from '@fortawesome/free-solid-svg-icons';
-import FaceLogin from '../components/FaceLogin';
-import Swal from 'sweetalert2';
+import { faUser, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 const Login = () => {
   const { login, user } = useAuth();
@@ -14,7 +12,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showFaceLogin, setShowFaceLogin] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -39,82 +36,6 @@ const Login = () => {
       setLoading(false);
     }
     // If success, useEffect will handle redirect
-  };
-
-  const handleFaceLogin = (imageData) => {
-    // Get stored face data from localStorage
-    const storedFaces = JSON.parse(localStorage.getItem('faceData') || '{}');
-    
-    // For demo: Check if we have stored face for any user
-    // In production, you would use face-api.js to compare faces
-    const usernames = Object.keys(storedFaces);
-    
-    if (usernames.length === 0) {
-      // First time - register face
-      Swal.fire({
-        title: 'Daftar Face ID',
-        text: 'Pilih akun untuk didaftarkan dengan Face ID',
-        input: 'select',
-        inputOptions: {
-          'ameliaagustina@bylia.com': 'Amelia Agustina',
-          'devanoerhadinata@bylia.com': 'Devano Erhadinata'
-        },
-        inputPlaceholder: 'Pilih akun',
-        showCancelButton: true,
-        confirmButtonColor: '#3b82f6',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Daftar',
-        cancelButtonText: 'Batal'
-      }).then((result) => {
-        if (result.isConfirmed && result.value) {
-          // Store face data
-          storedFaces[result.value] = imageData;
-          localStorage.setItem('faceData', JSON.stringify(storedFaces));
-          
-          Swal.fire({
-            title: 'Berhasil!',
-            text: 'Face ID berhasil didaftarkan. Silakan login dengan Face ID.',
-            icon: 'success',
-            confirmButtonColor: '#3b82f6'
-          });
-        }
-      });
-      setShowFaceLogin(false);
-    } else {
-      // Login with face - for demo, just use the first registered user
-      const registeredUsername = usernames[0];
-      
-      // Auto-fill and submit
-      setUsername(registeredUsername);
-      
-      // Get password from demo accounts (in production, use proper face recognition)
-      const passwords = {
-        'ameliaagustina@bylia.com': 'amel123',
-        'devanoerhadinata@bylia.com': 'deva123'
-      };
-      
-      const result = login(registeredUsername, passwords[registeredUsername]);
-      
-      if (result.success) {
-        Swal.fire({
-          title: 'Selamat Datang!',
-          text: `Login berhasil dengan Face ID`,
-          icon: 'success',
-          confirmButtonColor: '#3b82f6',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      } else {
-        Swal.fire({
-          title: 'Gagal!',
-          text: 'Face ID tidak dikenali',
-          icon: 'error',
-          confirmButtonColor: '#3b82f6'
-        });
-      }
-      
-      setShowFaceLogin(false);
-    }
   };
 
   return (
@@ -199,25 +120,6 @@ const Login = () => {
               {loading ? 'Memproses...' : 'Login'}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">atau</span>
-            </div>
-          </div>
-
-          {/* Face ID Login Button */}
-          <button
-            onClick={() => setShowFaceLogin(true)}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2 shadow-lg"
-          >
-            <FontAwesomeIcon icon={faCamera} className="text-xl" />
-            Login dengan Face ID
-          </button>
         </div>
 
         {/* Footer */}
@@ -225,14 +127,6 @@ const Login = () => {
           © 2026 SewaApartemenByLia. All rights reserved.
         </p>
       </div>
-
-      {/* Face Login Modal */}
-      {showFaceLogin && (
-        <FaceLogin
-          onFaceDetected={handleFaceLogin}
-          onClose={() => setShowFaceLogin(false)}
-        />
-      )}
     </div>
   );
 };
