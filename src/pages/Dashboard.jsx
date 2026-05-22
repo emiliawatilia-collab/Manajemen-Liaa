@@ -187,13 +187,13 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             icon={faChartLine}
-            label="Occupancy"
+            label="Tingkat Hunian"
             value={`${occupancyRate}%`}
             color="blue"
           />
           <StatCard
             icon={faDollarSign}
-            label="Revenue"
+            label="Pendapatan Hari Ini"
             value={`Rp ${formatRevenue(totalRevenue)}`}
             color="blue"
           />

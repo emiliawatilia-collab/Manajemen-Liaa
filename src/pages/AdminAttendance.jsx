@@ -24,6 +24,8 @@ import {
   deleteEmployee,
   addUser 
 } from '../services/firebase';
+import { ref, get, remove } from 'firebase/database';
+import { database } from '../services/firebase';
 import Swal from 'sweetalert2';
 
 const AdminAttendance = () => {
@@ -509,15 +511,41 @@ const AdminAttendance = () => {
     if (!result.isConfirmed) return;
     
     try {
+      // Get employee data first to get email
+      const employee = employees.find(e => e.id === employeeId);
+      
+      // Delete from employees collection
       await deleteEmployee(employeeId);
+      
+      // Delete from users collection
+      if (employee && employee.email) {
+        const usersRef = ref(database, 'users');
+        const snapshot = await get(usersRef);
+        
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          
+          // Find and delete user by username (email)
+          for (const [userId, user] of Object.entries(users)) {
+            if (user.username === employee.email) {
+              const userRef = ref(database, `users/${userId}`);
+              await remove(userRef);
+              console.log('User account deleted:', employee.email);
+              break;
+            }
+          }
+        }
+      }
+      
       Swal.fire({
         title: 'Berhasil!',
-        text: 'Pegawai berhasil dihapus',
+        text: 'Pegawai dan akun login berhasil dihapus',
         icon: 'success',
         confirmButtonColor: '#3b82f6',
         timer: 2000
       });
     } catch (error) {
+      console.error('Error deleting employee:', error);
       Swal.fire({
         title: 'Gagal!',
         text: 'Gagal menghapus pegawai',
