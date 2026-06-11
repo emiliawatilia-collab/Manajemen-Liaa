@@ -32,7 +32,7 @@ async function injectAttendance() {
     console.log('👤 Employee: Pegawai 1 (pegawai1)');
     console.log('⏰ Check-in: 09:00');
     console.log('⏰ Check-out: 17:08');
-    console.log('💰 Overtime: No (within 1 hour tolerance)');
+    console.log('✅ Regular work day');
     
     // Attendance data
     const attendanceData = {
@@ -46,7 +46,6 @@ async function injectAttendance() {
         start: '09:00',
         end: '17:00'
       },
-      overtime: false, // 17:08 is within 1 hour tolerance (before 18:00)
       timestamp: new Date().toISOString()
     };
 

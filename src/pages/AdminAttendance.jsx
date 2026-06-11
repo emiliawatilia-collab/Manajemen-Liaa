@@ -184,9 +184,6 @@ const AdminAttendance = () => {
       text += `Hari Kerja       : ${salary.workDays} hari\n`;
       text += `Gaji Harian      : Rp 60.000 x ${salary.workDays}\n`;
       text += `                 : Rp ${(salary.workDays * 60000).toLocaleString('id-ID')}\n\n`;
-      text += `Hari Lembur      : ${salary.overtimeDays} hari\n`;
-      text += `Bonus Lembur     : Rp 30.000 x ${salary.overtimeDays}\n`;
-      text += `                 : Rp ${(salary.overtimeDays * 30000).toLocaleString('id-ID')}\n\n`;
     } else {
       // Weekly breakdown
       text += 'RINCIAN GAJI PER MINGGU:\n\n';
@@ -217,15 +214,13 @@ const AdminAttendance = () => {
         );
         
         const weekWorkDays = weekAttendance.length;
-        const weekOvertimeDays = weekAttendance.filter(a => a.overtime).length;
-        const weekSalary = (weekWorkDays * 60000) + (weekOvertimeDays * 30000);
+        const weekSalary = weekWorkDays * 60000;
         
         const startDate = currentWeekStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         const endDate = weekEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         
         text += `Minggu ${weekNum} (${startDate} - ${endDate})\n`;
         text += `  Hari Kerja  : ${weekWorkDays} hari\n`;
-        text += `  Lembur      : ${weekOvertimeDays} hari\n`;
         text += `  Total       : Rp ${weekSalary.toLocaleString('id-ID')}\n\n`;
         
         currentWeekStart.setDate(currentWeekStart.getDate() + 7);
@@ -274,16 +269,13 @@ const AdminAttendance = () => {
     );
     
     const workDays = monthAttendance.filter(a => a.checkOut).length;
-    const overtimeDays = monthAttendance.filter(a => a.overtime).length;
     
     const dailyWage = 60000;
-    const overtimeBonus = 30000;
     
-    const totalSalary = (workDays * dailyWage) + (overtimeDays * overtimeBonus);
+    const totalSalary = workDays * dailyWage;
     
     return {
       workDays,
-      overtimeDays,
       totalSalary
     };
   };
@@ -719,13 +711,6 @@ const AdminAttendance = () => {
                           {attendance.checkOut || '-'}
                         </p>
                       </div>
-                      {attendance.overtime && (
-                        <div className="col-span-2 bg-yellow-50 rounded-lg p-3 text-center">
-                          <p className="text-sm font-medium text-yellow-700">
-                            💰 Lembur (+Rp 30.000)
-                          </p>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -848,12 +833,6 @@ const AdminAttendance = () => {
                             Rp {(salary.workDays * 60000).toLocaleString('id-ID')}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Lembur ({salary.overtimeDays} hari)</span>
-                          <span className="font-semibold text-gray-900">
-                            Rp {(salary.overtimeDays * 30000).toLocaleString('id-ID')}
-                          </span>
-                        </div>
                       </div>
                       
                       <div className="pt-3 border-t border-gray-200">
@@ -909,15 +888,13 @@ const AdminAttendance = () => {
                             );
                             
                             const weekWorkDays = weekAttendance.length;
-                            const weekOvertimeDays = weekAttendance.filter(a => a.overtime).length;
-                            const weekSalary = (weekWorkDays * 60000) + (weekOvertimeDays * 30000);
+                            const weekSalary = weekWorkDays * 60000;
                             
                             weeks.push({
                               num: weekNum,
                               start: currentWeekStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
                               end: weekEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
                               workDays: weekWorkDays,
-                              overtimeDays: weekOvertimeDays,
                               salary: weekSalary
                             });
                             
@@ -937,7 +914,6 @@ const AdminAttendance = () => {
                               </div>
                               <div className="flex justify-between text-xs text-gray-600">
                                 <span>{week.workDays} hari kerja</span>
-                                <span>{week.overtimeDays} hari lembur</span>
                               </div>
                             </div>
                           ));
@@ -967,8 +943,7 @@ const AdminAttendance = () => {
             
             <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
               <p className="text-sm text-blue-800">
-                <strong>Catatan:</strong> Gaji harian Rp 60.000, bonus lembur Rp 30.000 per hari. 
-                Lembur dihitung jika pulang lebih dari 1 jam setelah jam kerja selesai.
+                <strong>Catatan:</strong> Gaji harian Rp 60.000 per hari kerja.
                 <br />
                 <strong>Amelia:</strong> Gaji dibayar per bulan.
                 <br />

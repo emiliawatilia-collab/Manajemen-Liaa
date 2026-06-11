@@ -16,7 +16,6 @@ export const checkIn = async (username, name, shift, customTime = null) => {
       checkIn: timeStr,
       checkOut: null,
       shift: shift,
-      overtime: false,
       status: 'hadir',
       timestamp: now.toISOString()
     };
@@ -41,42 +40,9 @@ export const checkOut = async (attendanceId, shift, customTime = null) => {
     const now = new Date();
     const timeStr = customTime || now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
 
-    // Calculate if overtime (with 1 hour tolerance)
-    const [checkOutHour, checkOutMinute] = timeStr.split(':').map(Number);
-    const [shiftEndHour, shiftEndMinute] = shift.end.split(':').map(Number);
-    
-    // Add 1 hour tolerance to shift end time
-    let toleranceHour = shiftEndHour + 1;
-    let toleranceMinute = shiftEndMinute;
-    
-    // Handle 24-hour overflow
-    if (toleranceHour >= 24) {
-      toleranceHour = toleranceHour - 24;
-    }
-    
-    let overtime = false;
-    
-    // Handle midnight crossing for shift 2 (17:00-00:00)
-    // Tolerance becomes 01:00 (00:00 + 1 hour)
-    if (shiftEndHour === 0) {
-      // If checkout after 01:00
-      if (checkOutHour > toleranceHour || 
-         (checkOutHour === toleranceHour && checkOutMinute > toleranceMinute)) {
-        overtime = true;
-      }
-    } else {
-      // Normal shift
-      // For shift 1 (09:00-17:00), tolerance is 18:00
-      if (checkOutHour > toleranceHour || 
-         (checkOutHour === toleranceHour && checkOutMinute > toleranceMinute)) {
-        overtime = true;
-      }
-    }
-
     const attendanceRef = ref(database, `attendance/${attendanceId}`);
     await update(attendanceRef, {
-      checkOut: timeStr,
-      overtime: overtime
+      checkOut: timeStr
     });
 
     // Get employee name for notification
@@ -86,7 +52,7 @@ export const checkOut = async (attendanceId, shift, customTime = null) => {
       await sendAttendanceNotification(data.name, 'check-out', timeStr);
     }
 
-    return { success: true, overtime };
+    return { success: true };
   } catch (error) {
     console.error('Error check-out:', error);
     return { success: false, error: error.message };
@@ -265,19 +231,14 @@ export const rejectLeave = async (leaveId) => {
 // Calculate salary for a user in a month
 export const calculateMonthlySalary = (attendanceRecords, leaveRecords) => {
   const DAILY_SALARY = 60000;
-  const OVERTIME_BONUS = 30000;
 
   let workDays = 0;
-  let overtimeDays = 0;
   let leaveDays = 0;
 
-  // Count work days and overtime
+  // Count work days
   attendanceRecords.forEach(record => {
     if (record.status === 'hadir' && record.checkOut) {
       workDays++;
-      if (record.overtime) {
-        overtimeDays++;
-      }
     }
   });
 
@@ -292,15 +253,12 @@ export const calculateMonthlySalary = (attendanceRecords, leaveRecords) => {
   });
 
   const baseSalary = workDays * DAILY_SALARY;
-  const overtimeBonus = overtimeDays * OVERTIME_BONUS;
-  const totalSalary = baseSalary + overtimeBonus;
+  const totalSalary = baseSalary;
 
   return {
     workDays,
-    overtimeDays,
     leaveDays,
     baseSalary,
-    overtimeBonus,
     totalSalary
   };
 };

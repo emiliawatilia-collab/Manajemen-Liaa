@@ -127,23 +127,14 @@ const Attendance = () => {
       await loadTodayAttendance();
       setManualCheckOutTime('');
       setShowManualTime(false);
-      if (checkoutResult.overtime) {
-        Swal.fire({
-          title: 'Berhasil!',
-          html: 'Absen pulang berhasil!<br><strong>Bonus lembur Rp 30.000</strong>',
-          icon: 'success',
-          confirmButtonColor: '#3b82f6',
-          timer: 3000
-        });
-      } else {
-        Swal.fire({
-          title: 'Berhasil!',
-          text: 'Absen pulang berhasil dicatat',
-          icon: 'success',
-          confirmButtonColor: '#3b82f6',
-          timer: 2000
-        });
-      }
+      
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Absen pulang berhasil dicatat',
+        icon: 'success',
+        confirmButtonColor: '#3b82f6',
+        timer: 2000
+      });
     } else {
       Swal.fire({
         title: 'Gagal!',
@@ -296,11 +287,6 @@ const Attendance = () => {
                       <p className="text-xl font-bold text-gray-900">{todayAttendance.checkOut}</p>
                     </div>
                   </div>
-                  {todayAttendance.overtime && (
-                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">
-                      💰 Lembur
-                    </span>
-                  )}
                 </div>
               ) : (
                 <button
@@ -479,11 +465,6 @@ const Attendance = () => {
                             year: 'numeric'
                           })}
                         </p>
-                        {record.overtime && (
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
-                            Lembur
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center justify-between text-sm text-gray-600">
                         <span>Masuk: {record.checkIn}</span>
