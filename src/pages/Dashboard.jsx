@@ -4,6 +4,7 @@ import { faBuilding, faHome, faChartLine, faDollarSign, faSignOutAlt } from '@fo
 import StatCard from '../components/StatCard';
 import UnitCard from '../components/UnitCard';
 import { useUnits } from '../hooks/useUnits';
+import { updateUnit } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -143,6 +144,51 @@ const Dashboard = () => {
       Swal.fire({
         title: 'Gagal!',
         text: 'Gagal checkout unit',
+        icon: 'error',
+        confirmButtonColor: '#3b82f6'
+      });
+    }
+  };
+
+  // Manual check-in for future bookings
+  const handleManualCheckin = async (firebaseId, unitNumber) => {
+    const result = await Swal.fire({
+      title: 'Check-in Sekarang',
+      html: `Yakin ingin check-in Unit ${unitNumber} sekarang?<br/><br/>
+             <small class="text-gray-600">Status akan berubah dari "Booking" menjadi "Terisi" dan countdown akan dimulai.</small>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Check-in',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+    
+    try {
+      // Get unit data
+      const unit = units.find(u => (u.firebaseId || u.id) === firebaseId);
+      if (!unit || !unit.tenant) return;
+
+      // Update status to 'terisi' (occupied)
+      await updateUnit(firebaseId, {
+        status: 'terisi',
+        tenant: unit.tenant
+      });
+
+      Swal.fire({
+        title: 'Berhasil!',
+        text: `Unit ${unitNumber} berhasil di-check-in`,
+        icon: 'success',
+        confirmButtonColor: '#3b82f6',
+        timer: 2000
+      });
+    } catch (error) {
+      console.error('Error manual check-in:', error);
+      Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal check-in unit',
         icon: 'error',
         confirmButtonColor: '#3b82f6'
       });
@@ -384,8 +430,20 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Batalkan Button */}
-                  <div className="mt-3">
+                  {/* Action Buttons */}
+                  <div className="mt-3 space-y-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleManualCheckin(unit.firebaseId || unit.id, unit.unitNumber);
+                      }}
+                      className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Check-in Sekarang
+                    </button>
                     <button
                       onClick={(e) => {
                         e.preventDefault();

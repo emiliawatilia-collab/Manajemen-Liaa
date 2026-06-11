@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCamera, faImage } from '@fortawesome/free-solid-svg-icons';
 import { useUnits } from '../hooks/useUnits';
+import { useAuth } from '../contexts/AuthContext';
 import Swal from 'sweetalert2';
 
 const Booking = () => {
   const { units, bookUnit } = useUnits();
+  const { user } = useAuth(); // Get current logged-in user
   const [bookingMode, setBookingMode] = useState('now'); // 'now' or 'future'
   const [formData, setFormData] = useState({
     unitId: '',
@@ -18,8 +20,16 @@ const Booking = () => {
     checkOutTime: '',
     price: '',
     ktpImage: null,
+    bookedBy: '', // Who is making this booking
   });
   const [priceDisplay, setPriceDisplay] = useState(''); // For formatted display
+
+  // Set default bookedBy to current user's name
+  useEffect(() => {
+    if (user && user.name && !formData.bookedBy) {
+      setFormData(prev => ({ ...prev, bookedBy: user.name }));
+    }
+  }, [user]);
 
   // Format number with thousand separator
   const formatNumber = (value) => {
@@ -139,6 +149,8 @@ const Booking = () => {
       ktpImage: formData.ktpImage,
       price: parseInt(formData.price),
       rentalType: formData.rentalType,
+      bookedBy: formData.bookedBy, // Add who booked this
+      bookedAt: new Date().toISOString(), // Add timestamp
     };
     
     try {
@@ -164,6 +176,7 @@ const Booking = () => {
         checkOutTime: '',
         price: '',
         ktpImage: null,
+        bookedBy: user?.name || '', // Keep current user name
       });
       setPriceDisplay('');
       setBookingMode('now'); // Reset to default mode
@@ -191,6 +204,58 @@ const Booking = () => {
       {/* Form */}
       <div className="px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Booking Mode Selection */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Pilih Jenis Booking
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setBookingMode('now');
+                  setFormData({ ...formData, checkIn: new Date().toISOString().split('T')[0] });
+                }}
+                className={`py-4 px-4 rounded-xl font-semibold transition-all ${
+                  bookingMode === 'now'
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <div className="text-2xl mb-1">🏠</div>
+                <div className="text-sm">Check-in Sekarang</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBookingMode('future')}
+                className={`py-4 px-4 rounded-xl font-semibold transition-all ${
+                  bookingMode === 'future'
+                    ? 'bg-purple-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <div className="text-2xl mb-1">📅</div>
+                <div className="text-sm">Booking Mendatang</div>
+              </button>
+            </div>
+            
+            {/* Info Box */}
+            <div className={`mt-3 p-3 rounded-xl ${
+              bookingMode === 'now' 
+                ? 'bg-blue-50 border border-blue-200' 
+                : 'bg-purple-50 border border-purple-200'
+            }`}>
+              <p className={`text-xs ${
+                bookingMode === 'now' ? 'text-blue-700' : 'text-purple-700'
+              }`}>
+                {bookingMode === 'now' 
+                  ? '✓ Tamu langsung check-in hari ini. Unit harus dalam status kosong.'
+                  : '✓ Booking untuk tanggal masa depan. Unit akan otomatis berubah status saat tanggal check-in tiba.'
+                }
+              </p>
+            </div>
+          </div>
+
           {/* Unit Selection */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -204,14 +269,51 @@ const Booking = () => {
             >
               <option value="">-- Pilih Unit --</option>
               {units
+                .filter(unit => {
+                  // For 'now' mode, only show empty units
+                  if (bookingMode === 'now') {
+                    return unit.status === 'kosong';
+                  }
+                  // For 'future' mode, show all units
+                  return true;
+                })
                 .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber))
-                .map((unit) => (
-                <option key={unit.firebaseId || unit.id} value={unit.firebaseId || unit.id}>
-                  Unit {unit.unitNumber}
-                  {unit.status !== 'kosong' && ` (${unit.status === 'terisi' ? 'Terisi' : 'Booking'})`}
-                </option>
-              ))}
+                .map((unit) => {
+                  let label = `Unit ${unit.unitNumber}`;
+                  if (unit.status === 'terisi') {
+                    label += ' (Terisi)';
+                  } else if (unit.status === 'booking') {
+                    label += ' (📅 Booking Mendatang)';
+                  }
+                  return (
+                    <option key={unit.firebaseId || unit.id} value={unit.firebaseId || unit.id}>
+                      {label}
+                    </option>
+                  );
+                })}
             </select>
+            
+            {/* Warning untuk mode now tanpa unit kosong */}
+            {bookingMode === 'now' && units.filter(u => u.status === 'kosong').length === 0 && (
+              <p className="text-xs text-red-600 mt-2">
+                ⚠️ Tidak ada unit kosong. Gunakan mode "Booking Mendatang" untuk booking di masa depan.
+              </p>
+            )}
+            
+            {/* Info box untuk booking mendatang */}
+            {formData.unitId && units.find(u => (u.firebaseId || u.id) === formData.unitId)?.status === 'booking' && (
+              <div className="mt-3 p-3 bg-purple-50 rounded-xl border border-purple-200">
+                <p className="text-xs text-purple-700">
+                  <strong>📅 Unit ini sudah ada booking mendatang</strong>
+                  <br />
+                  Check-in: {new Date(units.find(u => (u.firebaseId || u.id) === formData.unitId)?.tenant.checkIn).toLocaleDateString('id-ID')}
+                  {' - '}
+                  Check-out: {new Date(units.find(u => (u.firebaseId || u.id) === formData.unitId)?.tenant.checkOut).toLocaleDateString('id-ID')}
+                  <br />
+                  <span className="text-purple-600">💡 Pastikan tanggal check-in Anda tidak bertabrakan!</span>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Tenant Info */}
@@ -242,6 +344,23 @@ const Booking = () => {
                 placeholder="08xxxxxxxxxx (opsional)"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dibooking oleh
+              </label>
+              <input
+                type="text"
+                value={formData.bookedBy}
+                onChange={(e) => setFormData({ ...formData, bookedBy: e.target.value })}
+                placeholder="Nama staff yang input booking"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-blue-50"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Otomatis terisi dengan nama Anda ({user?.name || 'User'})
+              </p>
             </div>
           </div>
 
