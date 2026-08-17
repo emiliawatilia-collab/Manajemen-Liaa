@@ -26,10 +26,16 @@ const Booking = () => {
 
   // Set default bookedBy to current user's name
   useEffect(() => {
-    if (user && user.name && !formData.bookedBy) {
-      setFormData(prev => ({ ...prev, bookedBy: user.name }));
+    if (user && user.name) {
+      setFormData(prev => {
+        // Only update if bookedBy is empty
+        if (!prev.bookedBy) {
+          return { ...prev, bookedBy: user.name };
+        }
+        return prev;
+      });
     }
-  }, [user]);
+  }, [user?.name]); // Only depend on user.name, not formData
 
   // Format number with thousand separator
   const formatNumber = (value) => {
